@@ -55,32 +55,32 @@ export default function Register() {
   }
 
   return (
-    
-      
-        
-          
-            
-          
-          
+    <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-block p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-4">
+            <Shield size={40} className="text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
             Đăng ký
-          
-          
+          </h1>
+          <p className="text-gray-600">
             Tạo tài khoản mới
-          
-        
+          </p>
+        </div>
 
         {error && (
-          
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
             {error}
-          
+          </div>
         )}
 
-        
-          
-            
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Loại tài khoản
-            
-            
+            </label>
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setRole('student')}
@@ -91,7 +91,7 @@ export default function Register() {
                 }`}
               >
                 👨‍🎓 Học sinh
-              
+              </button>
               <button
                 type="button"
                 onClick={() => setRole('counselor')}
@@ -102,14 +102,14 @@ export default function Register() {
                 }`}
               >
                 👩‍🏫 Tư vấn viên
-              
-            
-          
+              </button>
+            </div>
+          </div>
 
-          
-            
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Họ và tên
-            
+            </label>
             <input
               type="text"
               value={fullName}
@@ -118,12 +118,12 @@ export default function Register() {
               placeholder="Nguyễn Văn A"
               disabled={loading}
             />
-          
+          </div>
 
-          
-            
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Email
-            
+            </label>
             <input
               type="email"
               value={email}
@@ -132,13 +132,13 @@ export default function Register() {
               placeholder="your@email.com"
               disabled={loading}
             />
-          
+          </div>
 
-          
-            
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Mật khẩu
-            
-            
+            </label>
+            <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
@@ -152,16 +152,16 @@ export default function Register() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
               >
-                {showPassword ?  : }
-              
-            
-          
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
 
-          
-            
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Xác nhận mật khẩu
-            
-            
+            </label>
+            <div className="relative">
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 value={confirmPassword}
@@ -175,23 +175,27 @@ export default function Register() {
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
               >
-                {showConfirmPassword ?  : }
-              
-            
-          
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
 
-          
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all font-medium disabled:opacity-50"
+          >
             {loading ? 'Đang đăng ký...' : 'Đăng ký'}
-          
-        
+          </button>
+        </form>
 
-        
+        <p className="mt-6 text-center text-gray-600">
           Đã có tài khoản?{' '}
-          
+          <Link to="/login" className="text-purple-600 font-semibold hover:underline">
             Đăng nhập
-          
-        
-      
-    
+          </Link>
+        </p>
+      </div>
+    </div>
   )
 }
