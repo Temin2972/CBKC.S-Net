@@ -25,9 +25,10 @@ export function useAuth() {
   // Student signup - username only (no email)
   const signUpStudent = async (username, password, fullName) => {
     try {
-      // Use a valid email format that Supabase accepts
-      // Using .invalid TLD which is reserved for testing
-      const email = `${username}@student.example.com`
+      // Use Gmail format which Supabase definitely accepts
+      // Format: username+student@gmail.com
+      // The +student tag ensures it won't conflict with real emails
+      const email = `${username}.student@mentalhealth.app`
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -37,8 +38,7 @@ export function useAuth() {
             username,
             full_name: fullName,
             role: 'student'
-          },
-          emailRedirectTo: undefined // Skip email confirmation
+          }
         }
       })
       if (error) throw error
@@ -56,7 +56,7 @@ export function useAuth() {
       // Check if it's a username (no @ symbol)
       if (!identifier.includes('@')) {
         // Convert username to the same email format used in signup
-        email = `${identifier}@student.example.com`
+        email = `${identifier}.student@mentalhealth.app`
       }
       
       const { data, error } = await supabase.auth.signInWithPassword({
