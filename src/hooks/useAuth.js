@@ -22,13 +22,21 @@ export function useAuth() {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signUp = async (email, password, metadata) => {
+  // Student signup - username only (no email)
+  const signUpStudent = async (username, password, fullName) => {
     try {
+      // Use username as email format for Supabase auth
+      const email = `${username}@student.local`
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: metadata
+          data: {
+            username,
+            full_name: fullName,
+            role: 'student'
+          }
         }
       })
       if (error) throw error
@@ -38,8 +46,17 @@ export function useAuth() {
     }
   }
 
-  const signIn = async (email, password) => {
+  // Login with username (for students) or email (for counselors)
+  const signIn = async (identifier, password) => {
     try {
+      let email = identifier
+      
+      // Check if it's a username (no @ symbol)
+      if (!identifier.includes('@')) {
+        // Assume it's a student username
+        email = `${identifier}@student.local`
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -61,5 +78,5 @@ export function useAuth() {
     }
   }
 
-  return { user, loading, signUp, signIn, signOut }
+  return { user, loading, signUpStudent, signIn, signOut }
 }

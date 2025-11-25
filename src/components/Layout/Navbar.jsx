@@ -1,12 +1,16 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Home, MessageCircle, Users, Shield, LogOut } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 
 export default function Navbar() {
   const { user, signOut } = useAuth()
+  const navigate = useNavigate()
 
   const handleLogout = async () => {
-    await signOut()
+    const { error } = await signOut()
+    if (!error) {
+      navigate('/login')
+    }
   }
 
   return (
@@ -44,16 +48,6 @@ export default function Navbar() {
               <Users size={18} />
               Cộng đồng
             </Link>
-
-            {user?.user_metadata?.role === 'admin' && (
-              <Link
-                to="/admin"
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <Shield size={18} />
-                Admin
-              </Link>
-            )}
 
             <button
               onClick={handleLogout}

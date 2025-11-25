@@ -5,7 +5,6 @@ import Register from './pages/Register'
 import Home from './pages/Home'
 import Chat from './pages/Chat'
 import Community from './pages/Community'
-import Admin from './pages/Admin'
 import ProtectedRoute from './components/Layout/ProtectedRoute'
 
 function App() {
@@ -35,7 +34,6 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/community" element={<Community />} />
-          <Route path="/admin" element={<Admin />} />
         </Route>
 
         <Route 

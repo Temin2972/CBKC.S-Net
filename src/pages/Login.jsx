@@ -4,7 +4,7 @@ import { Shield, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 
 export default function Login() {
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -18,16 +18,16 @@ export default function Login() {
     setError('')
     setLoading(true)
 
-    if (!email || !password) {
+    if (!identifier || !password) {
       setError('Vui lòng điền đầy đủ thông tin')
       setLoading(false)
       return
     }
 
-    const { error } = await signIn(email, password)
+    const { error } = await signIn(identifier, password)
     
     if (error) {
-      setError('Email hoặc mật khẩu không đúng')
+      setError('Tên đăng nhập hoặc mật khẩu không đúng')
       setLoading(false)
     } else {
       navigate('/home')
@@ -58,16 +58,19 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
+              Tên đăng nhập hoặc Email
             </label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="your@email.com"
+              placeholder="nguyenvana hoặc counselor@school.com"
               disabled={loading}
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Học sinh: Nhập tên đăng nhập | Tư vấn viên: Nhập email
+            </p>
           </div>
 
           <div>
@@ -103,7 +106,7 @@ export default function Login() {
         </form>
 
         <p className="mt-6 text-center text-gray-600">
-          Chưa có tài khoản?{' '}
+          Chưa có tài khoản học sinh?{' '}
           <Link to="/register" className="text-purple-600 font-semibold hover:underline">
             Đăng ký ngay
           </Link>

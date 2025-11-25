@@ -1,20 +1,19 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Shield, Eye, EyeOff } from 'lucide-react'
+import { Shield, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 
 export default function Register() {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState('student')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   
-  const { signUp } = useAuth()
+  const { signUpStudent } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -22,8 +21,21 @@ export default function Register() {
     setError('')
     setLoading(true)
 
-    if (!email || !password || !fullName || !confirmPassword) {
+    if (!username || !password || !fullName || !confirmPassword) {
       setError('Vui lòng điền đầy đủ thông tin')
+      setLoading(false)
+      return
+    }
+
+    // Username validation
+    if (username.length < 3) {
+      setError('Tên đăng nhập phải có ít nhất 3 ký tự')
+      setLoading(false)
+      return
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setError('Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới')
       setLoading(false)
       return
     }
@@ -40,16 +52,17 @@ export default function Register() {
       return
     }
 
-    const { error } = await signUp(email, password, {
-      full_name: fullName,
-      role: role
-    })
+    const { error } = await signUpStudent(username, password, fullName)
     
     if (error) {
-      setError(error.message || 'Đã có lỗi xảy ra')
+      if (error.message?.includes('already registered')) {
+        setError('Tên đăng nhập đã tồn tại')
+      } else {
+        setError(error.message || 'Đã có lỗi xảy ra')
+      }
       setLoading(false)
     } else {
-      alert('Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.')
+      alert('Đăng ký thành công!')
       navigate('/login')
     }
   }
@@ -62,11 +75,21 @@ export default function Register() {
             <Shield size={40} className="text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Đăng ký
+            Đăng ký Học sinh
           </h1>
           <p className="text-gray-600">
-            Tạo tài khoản mới
+            Tạo tài khoản học sinh mới
           </p>
+        </div>
+
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <div className="flex items-start gap-2">
+            <AlertCircle size={20} className="text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-blue-800">
+              <p className="font-semibold mb-1">Dành cho học sinh</p>
+              <p className="text-blue-700">Không cần email. Chỉ cần tên đăng nhập và mật khẩu.</p>
+            </div>
+          </div>
         </div>
 
         {error && (
@@ -76,36 +99,6 @@ export default function Register() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Loại tài khoản
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setRole('student')}
-                className={`py-3 rounded-xl font-medium transition-all ${
-                  role === 'student'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                👨‍🎓 Học sinh
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('counselor')}
-                className={`py-3 rounded-xl font-medium transition-all ${
-                  role === 'counselor'
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                👩‍🏫 Tư vấn viên
-              </button>
-            </div>
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Họ và tên
@@ -122,16 +115,19 @@ export default function Register() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
+              Tên đăng nhập
             </label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value.toLowerCase())}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="your@email.com"
+              placeholder="nguyenvana"
               disabled={loading}
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Chỉ chữ cái, số và dấu gạch dưới. Tối thiểu 3 ký tự.
+            </p>
           </div>
 
           <div>
