@@ -13,6 +13,8 @@ export default function CommentList({
 }) {
   const [likingCommentId, setLikingCommentId] = useState(null)
 
+  console.log('CommentList render:', { commentsCount: comments.length, loading })
+
   const handleLike = async (commentId, isLiked) => {
     if (likingCommentId) return
     
@@ -27,13 +29,21 @@ export default function CommentList({
   }
 
   const handleCreateComment = async (content) => {
-    return await onCreateComment(content, null)
+    console.log('Creating comment:', content)
+    const result = await onCreateComment(content, null)
+    console.log('Comment create result:', result)
+    return result
   }
 
   const handleCreateReply = (parentId, onClose) => {
     return (
       <CommentForm
-        onSubmit={(content) => onCreateComment(content, parentId)}
+        onSubmit={async (content) => {
+          console.log('Creating reply to:', parentId, content)
+          const result = await onCreateComment(content, parentId)
+          console.log('Reply create result:', result)
+          return result
+        }}
         onCancel={onClose}
         placeholder="Viết trả lời..."
         autoFocus={true}

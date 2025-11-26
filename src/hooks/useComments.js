@@ -6,7 +6,10 @@ export function useComments(postId, currentUserId) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!postId) return
+    if (!postId) {
+      setLoading(false)
+      return
+    }
 
     fetchComments()
 
@@ -16,38 +19,80 @@ export function useComments(postId, currentUserId) {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'comments',
           filter: `post_id=eq.${postId}`
         },
-        () => {
-          fetchComments()
+        (payload) => {
+          console.log('New comment:', payload)
+          fetchComments() // Refetch all comments when new one is added
         }
       )
-      .subscribe()
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'comments',
+          filter: `post_id=eq.${postId}`
+        },
+        (payload) => {
+          console.log('Comment updated:', payload)
+          fetchComments() // Refetch when comment is updated (likes)
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'comments',
+          filter: `post_id=eq.${postId}`
+        },
+        (payload) => {
+          console.log('Comment deleted:', payload)
+          fetchComments() // Refetch when comment is deleted
+        }
+      )
+      .subscribe((status) => {
+        console.log('Comment subscription status:', status)
+      })
 
     return () => {
+      console.log('Cleaning up comment subscription')
       supabase.removeChannel(channel)
     }
   }, [postId, currentUserId])
 
   const fetchComments = async () => {
-    const { data, error } = await supabase
-      .from('comments')
-      .select(`
-        *,
-        author:users!comments_author_id_fkey(id, full_name, role)
-      `)
-      .eq('post_id', postId)
-      .order('created_at', { ascending: true })
+    if (!postId) return
 
-    if (!error) {
-      // Organize comments into parent-child structure
-      const organized = organizeComments(data || [], currentUserId)
-      setComments(organized)
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select(`
+          *,
+          author:users!comments_author_id_fkey(id, full_name, role)
+        `)
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching comments:', error)
+        setComments([])
+      } else {
+        console.log('Fetched comments:', data)
+        // Organize comments into parent-child structure
+        const organized = organizeComments(data || [], currentUserId)
+        setComments(organized)
+      }
+    } catch (err) {
+      console.error('Exception fetching comments:', err)
+      setComments([])
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   // Organize comments into 2-level hierarchy
@@ -73,8 +118,12 @@ export function useComments(postId, currentUserId) {
   }
 
   const createComment = async (content, parentCommentId = null) => {
+    if (!currentUserId) {
+      return { error: new Error('You must be logged in to comment') }
+    }
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('comments')
         .insert({
           post_id: postId,
@@ -82,16 +131,30 @@ export function useComments(postId, currentUserId) {
           parent_comment_id: parentCommentId,
           content: content.trim()
         })
+        .select()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error creating comment:', error)
+        throw error
+      }
+
+      console.log('Comment created:', data)
+      
+      // Immediately refetch to show the new comment
+      await fetchComments()
+      
       return { error: null }
     } catch (error) {
-      console.error('Create comment error:', error)
+      console.error('Create comment exception:', error)
       return { error }
     }
   }
 
   const toggleCommentLike = async (commentId, isCurrentlyLiked) => {
+    if (!currentUserId) {
+      return { error: new Error('You must be logged in to like') }
+    }
+
     try {
       // Get current comment
       const { data: comment, error: fetchError } = await supabase
@@ -178,6 +241,10 @@ export function useComments(postId, currentUserId) {
         .eq('id', commentId)
 
       if (error) throw error
+      
+      // Refetch comments after delete
+      await fetchComments()
+      
       return { error: null }
     } catch (error) {
       console.error('Delete comment error:', error)
