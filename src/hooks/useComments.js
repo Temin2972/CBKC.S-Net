@@ -71,69 +71,60 @@ export function useComments(postId, currentUserId) {
     try {
       console.log('Fetching comments for post:', postId)
       
-      // First, try with the foreign key relationship
-      let { data, error } = await supabase
+      // Get comments without join - no foreign key needed!
+      const { data: commentsData, error: commentsError } = await supabase
         .from('comments')
-        .select(`
-          *,
-          author:users!comments_author_id_fkey(id, full_name, role)
-        `)
+        .select('*')
         .eq('post_id', postId)
         .order('created_at', { ascending: true })
 
-      // If foreign key error, fall back to fetching users separately
-      if (error && error.code === 'PGRST200') {
-        console.log('Foreign key not found, using fallback query')
-        
-        // Get comments without join
-        const commentsResult = await supabase
-          .from('comments')
-          .select('*')
-          .eq('post_id', postId)
-          .order('created_at', { ascending: true })
-
-        if (commentsResult.error) {
-          throw commentsResult.error
-        }
-
-        // Get unique author IDs
-        const authorIds = [...new Set(commentsResult.data.map(c => c.author_id))]
-        
-        // Fetch all authors
-        const usersResult = await supabase
-          .from('users')
-          .select('id, full_name, role')
-          .in('id', authorIds)
-
-        if (usersResult.error) {
-          console.error('Error fetching users:', usersResult.error)
-        }
-
-        // Map authors to comments
-        const usersMap = {}
-        if (usersResult.data) {
-          usersResult.data.forEach(user => {
-            usersMap[user.id] = user
-          })
-        }
-
-        data = commentsResult.data.map(comment => ({
-          ...comment,
-          author: usersMap[comment.author_id] || null
-        }))
-        
-        error = null
-      }
-
-      if (error) {
-        console.error('Error fetching comments:', error)
+      if (commentsError) {
+        console.error('Error fetching comments:', commentsError)
         setComments([])
-      } else {
-        console.log('Fetched comments:', data)
-        // Organize comments into parent-child structure
-        const organized = organizeComments(data || [], currentUserId)
-        setComments(organized)
+        setLoading(false)
+        return
       }
+
+      if (!commentsData || commentsData.length === 0) {
+        console.log('No comments found')
+        setComments([])
+        setLoading(false)
+        return
+      }
+
+      // Get unique author IDs
+      const authorIds = [...new Set(commentsData.map(c => c.author_id))]
+      console.log('Fetching authors:', authorIds)
+      
+      // Fetch all authors in one query
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, full_name, role')
+        .in('id', authorIds)
+
+      if (usersError) {
+        console.error('Error fetching users:', usersError)
+      }
+
+      // Map authors to comments
+      const usersMap = {}
+      if (usersData) {
+        usersData.forEach(user => {
+          usersMap[user.id] = user
+        })
+      }
+
+      // Combine comments with author info
+      const commentsWithAuthors = commentsData.map(comment => ({
+        ...comment,
+        author: usersMap[comment.author_id] || null
+      }))
+
+      console.log('Fetched comments with authors:', commentsWithAuthors)
+      
+      // Organize comments into parent-child structure
+      const organized = organizeComments(commentsWithAuthors, currentUserId)
+      setComments(organized)
     } catch (err) {
       console.error('Exception fetching comments:', err)
       setComments([])
