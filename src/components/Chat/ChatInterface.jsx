@@ -68,13 +68,15 @@ export default function ChatInterface({ chatRoom, currentUser }) {
   const getSenderDisplayName = (message) => {
     if (!message.sender) return 'Người dùng'
     
-    const role = message.sender.user_metadata?.role
+    const role = message.sender.user_metadata?.role || message.sender.role
     const name = message.sender.full_name
     
     if (role === 'counselor') {
       return `Tư vấn viên ${name}`
     } else if (role === 'admin') {
       return `Quản trị viên ${name}`
+    } else if (role === 'student') {
+      return `Học sinh ${name}`
     } else {
       return name
     }
@@ -113,12 +115,12 @@ export default function ChatInterface({ chatRoom, currentUser }) {
                       : 'bg-white text-gray-800 border border-gray-200'
                   }`}
                 >
-                  {/* Sender Name (for received messages) */}
-                  {!message.is_mine && (
-                    <div className="text-xs font-semibold text-purple-600 mb-1">
-                      {getSenderDisplayName(message)}
-                    </div>
-                  )}
+                  {/* ALWAYS show sender name */}
+                  <div className={`text-xs font-semibold mb-1 ${
+                    message.is_mine ? 'text-purple-200' : 'text-purple-600'
+                  }`}>
+                    {getSenderDisplayName(message)}
+                  </div>
 
                   {/* Message Content */}
                   <p className="whitespace-pre-wrap break-words">

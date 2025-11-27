@@ -46,10 +46,10 @@ export function useChatMessages(chatRoomId, currentUserId) {
       const senderIds = [...new Set(messagesData.map(m => m.sender_id))]
       console.log('Fetching senders:', senderIds)
 
-      // Fetch all senders
+      // Fetch all senders - include role field!
       const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select('id, full_name, user_metadata')
+        .select('id, full_name, role, user_metadata')
         .in('id', senderIds)
 
       if (usersError) {
@@ -95,7 +95,7 @@ export function useChatMessages(chatRoomId, currentUserId) {
         },
         (payload) => {
           console.log('New message received:', payload)
-          fetchMessages()
+          fetchMessages() // Refetch to get sender info
         }
       )
       .on(
