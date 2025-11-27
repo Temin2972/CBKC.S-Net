@@ -3,7 +3,8 @@ import { useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Home from './pages/Home'
-import Chat from './pages/Chat'
+import StudentChat from './pages/StudentChat'
+import CounselorChat from './pages/CounselorChat'
 import Community from './pages/Community'
 import ProtectedRoute from './components/Layout/ProtectedRoute'
 
@@ -32,7 +33,17 @@ function App() {
         
         <Route element={<ProtectedRoute user={user} />}>
           <Route path="/home" element={<Home />} />
-          <Route path="/chat" element={<Chat />} />
+          
+          {/* Chat route - different component based on role */}
+          <Route 
+            path="/chat" 
+            element={
+              user?.user_metadata?.role === 'student' 
+                ? <StudentChat /> 
+                : <CounselorChat />
+            } 
+          />
+          
           <Route path="/community" element={<Community />} />
         </Route>
 
