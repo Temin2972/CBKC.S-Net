@@ -24,24 +24,10 @@ export default function Home() {
           </h2>
           <p className="text-xl text-white opacity-90">
             {isCounselor 
-              ? 'Sẵn sàng hỗ trợ học sinh hôm nay' 
+              ? 'Sẵn sàng hỗ trợ học sinh hôm nay?' 
               : 'Bạn cần hỗ trợ gì hôm nay?'}
           </p>
         </div>
-
-        {/* Caution Section - Only for counselors/admins */}
-        {isCounselor && (
-          <div className="mb-8">
-            <CautionSection />
-          </div>
-        )}
-
-        {/* Pending Section - Only for counselors/admins */}
-        {isCounselor && (
-          <div className="mb-8">
-            <PendingSection />
-          </div>
-        )}
 
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           <Link
@@ -52,7 +38,7 @@ export default function Home() {
               <MessageCircle size={40} className="text-blue-600" />
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-2">
-              {isCounselor ? 'Phòng Tư vấn' : 'Chat với Tư vấn viên'}
+              {isCounselor ? 'Phòng Tư vấn' : 'Chat với giáo viên tâm lý'}
             </h3>
             <p className="text-gray-600">
               {isCounselor 
@@ -102,6 +88,20 @@ export default function Home() {
             </div>
           </div>
         )}
+        
+        {/* Caution Section - Only for counselors/admins */}
+        {isCounselor && (
+          <div className="mb-8">
+            <CautionSection />
+          </div>
+        )}
+
+        {/* Pending Section - Only for counselors/admins */}
+        {isCounselor && (
+          <div className="mb-8">
+            <PendingSection />
+          </div>
+        )}
 
         {/* Counselor Tips */}
         {isCounselor && (
@@ -120,11 +120,11 @@ export default function Home() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-purple-500 font-bold">•</span>
-                <span>Nội dung hung hăng/bạo lực sẽ tự động bị chặn</span>
+                <span>Nội dung bạo lực sẽ tự động bị chặn</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-purple-500 font-bold">•</span>
-                <span>AI phân tích nội dung để phát hiện sớm các trường hợp cần hỗ trợ</span>
+                <span>AI sẽ phân tích nội dung để phát hiện sớm các trường hợp cần hỗ trợ</span>
               </li>
             </ul>
           </div>
