@@ -41,7 +41,7 @@ Response format:
 {
   "category": "one of the categories above",
   "confidence": 0.0 to 1.0,
-  "reasoning": "brief explanation",
+  "reasoning": "brief explanation in Vietnamese",
   "keywords_detected": ["list", "of", "concerning", "words"]
 }
 

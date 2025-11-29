@@ -241,10 +241,10 @@ export default function PendingSection() {
                       </button>
 
                       {showFlagOptions === item.id && (
-                        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[200px]">
+                        <div className="absolute bottom-full left-0 mb-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px]">
                           <button
                             onClick={() => handleFlagAndReject(item, FLAG_LEVELS.MILD, 'mild_negative')}
-                            className="w-full text-left px-4 py-2 hover:bg-yellow-50 text-sm flex items-center gap-2"
+                            className="w-full text-left px-4 py-2 hover:bg-yellow-50 text-sm flex items-center gap-2 rounded-t-lg"
                           >
                             <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                             Theo dõi (nhẹ)
@@ -258,7 +258,7 @@ export default function PendingSection() {
                           </button>
                           <button
                             onClick={() => handleFlagAndReject(item, FLAG_LEVELS.IMMEDIATE, 'self_harm')}
-                            className="w-full text-left px-4 py-2 hover:bg-red-50 text-sm flex items-center gap-2"
+                            className="w-full text-left px-4 py-2 hover:bg-red-50 text-sm flex items-center gap-2 rounded-b-lg"
                           >
                             <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                             Cần chú ý ngay (tự hại)
