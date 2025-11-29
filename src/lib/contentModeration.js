@@ -3,6 +3,9 @@
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
 
+// Debug: Log API key status (remove in production)
+console.log('Gemini API Key configured:', GEMINI_API_KEY ? 'Yes (length: ' + GEMINI_API_KEY.length + ')' : 'No')
+
 // Flag levels
 export const FLAG_LEVELS = {
   NORMAL: 0,        // No issues detected
@@ -65,7 +68,8 @@ export async function analyzeContent(content) {
   }
 
   if (!GEMINI_API_KEY) {
-    console.warn('Gemini API key not configured, content pending review')
+    console.warn('❌ Gemini API key not configured!')
+    console.warn('Make sure VITE_GEMINI_API_KEY is set in your .env file')
     return pendingResult
   }
 
@@ -80,6 +84,7 @@ export async function analyzeContent(content) {
   }
 
   try {
+    console.log('🔍 Analyzing content with Gemini API...')
     const prompt = MODERATION_PROMPT.replace('{CONTENT}', content)
 
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -98,35 +103,40 @@ export async function analyzeContent(content) {
       })
     })
 
+    console.log('📡 API Response status:', response.status)
+
     if (!response.ok) {
-      console.error('Gemini API error:', response.status)
+      const errorText = await response.text()
+      console.error('❌ Gemini API error:', response.status, errorText)
       return pendingResult
     }
 
     const data = await response.json()
+    console.log('✅ API Response received:', data)
     
     // Extract the text response
     const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text
     
     if (!textResponse) {
-      console.error('No response from Gemini')
+      console.error('❌ No text in API response')
       return pendingResult
     }
 
     // Parse JSON from response
     const jsonMatch = textResponse.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
-      console.error('Could not parse JSON from response:', textResponse)
+      console.error('❌ Could not parse JSON from response:', textResponse)
       return pendingResult
     }
 
     const analysis = JSON.parse(jsonMatch[0])
+    console.log('✅ Content analysis result:', analysis)
     
     // Map category to action and flag level
     return mapCategoryToAction(analysis)
 
   } catch (error) {
-    console.error('Content moderation error:', error)
+    console.error('❌ Content moderation error:', error)
     return pendingResult
   }
 }
