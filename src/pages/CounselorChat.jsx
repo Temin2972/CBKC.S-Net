@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useChatRoom } from '../hooks/useChatRoom'
 import Navbar from '../components/Layout/Navbar'
@@ -7,8 +8,19 @@ import { MessageCircle, Users, Clock } from 'lucide-react'
 
 export default function CounselorChat() {
   const { user } = useAuth()
+  const { roomId } = useParams() // Get roomId from URL if present
   const { allChatRooms, loading } = useChatRoom(user?.id, 'counselor')
   const [selectedRoom, setSelectedRoom] = useState(null)
+
+  // Auto-select room when roomId is in URL or when rooms load
+  useEffect(() => {
+    if (!loading && allChatRooms.length > 0 && roomId) {
+      const room = allChatRooms.find(r => r.id === roomId)
+      if (room) {
+        setSelectedRoom(room)
+      }
+    }
+  }, [loading, allChatRooms, roomId])
 
   const formatLastMessageTime = (timestamp) => {
     const date = new Date(timestamp)

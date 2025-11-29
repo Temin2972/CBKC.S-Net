@@ -44,6 +44,12 @@ function App() {
             } 
           />
           
+          {/* Chat with specific room ID - for counselors to open a specific student's chat */}
+          <Route 
+            path="/chat/:roomId" 
+            element={<CounselorChat />} 
+          />
+          
           <Route path="/community" element={<Community />} />
         </Route>
 

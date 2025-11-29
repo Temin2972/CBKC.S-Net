@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { 
   Clock, 
   Check, 
@@ -7,12 +8,15 @@ import {
   MessageCircle,
   Image as ImageIcon,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Loader2
 } from 'lucide-react'
 import { usePendingContent } from '../../hooks/usePendingContent'
 import { FLAG_LEVELS } from '../../lib/contentModeration'
+import { supabase } from '../../lib/supabaseClient'
 
 export default function PendingSection() {
+  const navigate = useNavigate()
   const { 
     pendingItems, 
     loading, 
@@ -24,6 +28,7 @@ export default function PendingSection() {
   const [processingId, setProcessingId] = useState(null)
   const [expandedItems, setExpandedItems] = useState(new Set())
   const [showFlagOptions, setShowFlagOptions] = useState(null)
+  const [chattingUserId, setChattingUserId] = useState(null)
 
   const toggleExpand = (id) => {
     const newExpanded = new Set(expandedItems)
@@ -53,6 +58,50 @@ export default function PendingSection() {
     await flagAndReject(item, flagLevel, category)
     setShowFlagOptions(null)
     setProcessingId(null)
+  }
+
+  // Navigate to student's chat room, create one if it doesn't exist
+  const handleChatWithStudent = async (studentId) => {
+    setChattingUserId(studentId)
+    
+    try {
+      // Check if chat room already exists for this student
+      const { data: existingRoom, error: fetchError } = await supabase
+        .from('chat_rooms')
+        .select('id')
+        .eq('student_id', studentId)
+        .single()
+
+      if (existingRoom) {
+        // Room exists, navigate to it
+        navigate(`/chat/${existingRoom.id}`)
+        return
+      }
+
+      // Room doesn't exist, create one for the student
+      const { data: newRoom, error: createError } = await supabase
+        .from('chat_rooms')
+        .insert({
+          student_id: studentId
+        })
+        .select()
+        .single()
+
+      if (createError) {
+        console.error('Error creating chat room:', createError)
+        alert('Không thể tạo phòng chat. Vui lòng thử lại.')
+        return
+      }
+
+      // Navigate to the new room
+      navigate(`/chat/${newRoom.id}`)
+      
+    } catch (error) {
+      console.error('Error handling chat:', error)
+      alert('Có lỗi xảy ra. Vui lòng thử lại.')
+    } finally {
+      setChattingUserId(null)
+    }
   }
 
   const formatTime = (timestamp) => {
@@ -268,13 +317,23 @@ export default function PendingSection() {
                     </div>
 
                     {/* Quick Chat */}
-                    <a
-                      href="/chat"
-                      className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors ml-auto"
+                    <button
+                      onClick={() => handleChatWithStudent(item.user_id)}
+                      disabled={chattingUserId === item.user_id}
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors ml-auto disabled:opacity-50"
                     >
-                      <MessageCircle size={16} />
-                      <span>Chat với học sinh</span>
-                    </a>
+                      {chattingUserId === item.user_id ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          <span>Đang mở...</span>
+                        </>
+                      ) : (
+                        <>
+                          <MessageCircle size={16} />
+                          <span>Chat với học sinh</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               )}

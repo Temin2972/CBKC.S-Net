@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { 
   AlertTriangle, 
   AlertCircle, 
@@ -8,15 +8,19 @@ import {
   MessageCircle,
   Check,
   Clock,
-  User
+  User,
+  Loader2
 } from 'lucide-react'
 import { FLAG_LEVELS, getFlagLevelLabel, getCategoryLabel } from '../../lib/contentModeration'
 import { useFlaggedContent } from '../../hooks/useFlaggedContent'
+import { supabase } from '../../lib/supabaseClient'
 
 export default function CautionSection() {
+  const navigate = useNavigate()
   const { flaggedItems, loading, resolveItem, resolveAllForUser, getCounts } = useFlaggedContent()
   const [expandedUsers, setExpandedUsers] = useState(new Set())
   const [resolvingItem, setResolvingItem] = useState(null)
+  const [chattingUserId, setChattingUserId] = useState(null)
 
   const counts = getCounts()
 
@@ -39,6 +43,50 @@ export default function CautionSection() {
   const handleResolveAll = async (userId) => {
     if (!confirm('Đánh dấu tất cả nội dung của người dùng này là đã xử lý?')) return
     await resolveAllForUser(userId)
+  }
+
+  // Navigate to student's chat room, create one if it doesn't exist
+  const handleChatWithStudent = async (studentId) => {
+    setChattingUserId(studentId)
+    
+    try {
+      // Check if chat room already exists for this student
+      const { data: existingRoom, error: fetchError } = await supabase
+        .from('chat_rooms')
+        .select('id')
+        .eq('student_id', studentId)
+        .single()
+
+      if (existingRoom) {
+        // Room exists, navigate to it
+        navigate(`/chat/${existingRoom.id}`)
+        return
+      }
+
+      // Room doesn't exist, create one for the student
+      const { data: newRoom, error: createError } = await supabase
+        .from('chat_rooms')
+        .insert({
+          student_id: studentId
+        })
+        .select()
+        .single()
+
+      if (createError) {
+        console.error('Error creating chat room:', createError)
+        alert('Không thể tạo phòng chat. Vui lòng thử lại.')
+        return
+      }
+
+      // Navigate to the new room
+      navigate(`/chat/${newRoom.id}`)
+      
+    } catch (error) {
+      console.error('Error handling chat:', error)
+      alert('Có lỗi xảy ra. Vui lòng thử lại.')
+    } finally {
+      setChattingUserId(null)
+    }
   }
 
   const formatTime = (timestamp) => {
@@ -185,14 +233,26 @@ export default function CautionSection() {
 
                   <div className="flex items-center gap-2">
                     {/* Quick Chat Button */}
-                    <Link
-                      to="/chat"
-                      onClick={(e) => e.stopPropagation()}
-                      className="px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2 text-sm"
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleChatWithStudent(userGroup.userId)
+                      }}
+                      disabled={chattingUserId === userGroup.userId}
+                      className="px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2 text-sm disabled:opacity-50"
                     >
-                      <MessageCircle size={16} />
-                      <span>Chat ngay</span>
-                    </Link>
+                      {chattingUserId === userGroup.userId ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          <span>Đang mở...</span>
+                        </>
+                      ) : (
+                        <>
+                          <MessageCircle size={16} />
+                          <span>Chat ngay</span>
+                        </>
+                      )}
+                    </button>
 
                     {/* Expand/Collapse */}
                     <button className="p-2 hover:bg-white/50 rounded-lg transition-colors">
