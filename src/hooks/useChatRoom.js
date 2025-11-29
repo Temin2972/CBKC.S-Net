@@ -138,7 +138,7 @@ export function useChatRoom(userId, userRole) {
         .from('chat_rooms')
         .select(`
           *,
-          student:users!chat_rooms_student_id_fkey(id, full_name, user_metadata)
+          student:users!chat_rooms_student_id_fkey(id, full_name, role)
         `)
         .eq('status', 'active')
         .order('last_message_at', { ascending: false })
@@ -181,10 +181,10 @@ export function useChatRoom(userId, userRole) {
       // Get student IDs
       const studentIds = rooms.map(r => r.student_id)
 
-      // Get students
+      // Get students - only select columns that exist in your users table
       const { data: students, error: studentsError } = await supabase
         .from('users')
-        .select('id, full_name, user_metadata')
+        .select('id, full_name, role')
         .in('id', studentIds)
 
       if (studentsError) {
