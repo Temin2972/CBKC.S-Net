@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Shield, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Shield, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useQuotes } from '../hooks/useQuotes'
 
@@ -17,6 +17,28 @@ export default function Register() {
   const { signUpStudent } = useAuth()
   const { quote, loading: quoteLoading } = useQuotes()
   const navigate = useNavigate()
+  const location = useLocation()
+  
+  // Get the feature user wanted to access
+  const fromFeature = location.state?.from
+
+  const getFeatureMessage = () => {
+    if (fromFeature === 'chat') {
+      return {
+        title: '💬 Bạn muốn sử dụng tính năng Chat với Tư vấn viên',
+        description: 'Đăng ký để kết nối với các tư vấn viên tâm lý chuyên nghiệp'
+      }
+    }
+    if (fromFeature === 'community') {
+      return {
+        title: '👥 Bạn muốn tham gia Cộng đồng Ẩn danh',
+        description: 'Đăng ký để chia sẻ và kết nối với những người cùng hoàn cảnh'
+      }
+    }
+    return null
+  }
+
+  const featureMessage = getFeatureMessage()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -72,6 +94,25 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Feature Message */}
+        {featureMessage && (
+          <div className="bg-white/90 rounded-3xl shadow-2xl p-6 mb-4 animate-fade-in">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
+                <ArrowRight size={24} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-800 mb-1">
+                  {featureMessage.title}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {featureMessage.description}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white/90 rounded-3xl shadow-2xl p-8 mb-6">
           <div className="text-center mb-8">
             <div className="inline-block p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-4">
@@ -104,7 +145,7 @@ export default function Register() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tên hiển thị ( Có thể không để tên thật)
+                Tên hiển thị (Có thể không để tên thật)
               </label>
               <input
                 type="text"

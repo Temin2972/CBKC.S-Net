@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import LandingPage from './pages/LandingPage'
 import Home from './pages/Home'
 import StudentChat from './pages/StudentChat'
 import CounselorChat from './pages/CounselorChat'
@@ -22,15 +23,23 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public Routes */}
+        <Route 
+          path="/" 
+          element={user ? <Navigate to="/home" /> : <LandingPage />} 
+        />
+        
         <Route 
           path="/login" 
           element={user ? <Navigate to="/home" /> : <Login />} 
         />
+        
         <Route 
           path="/register" 
           element={user ? <Navigate to="/home" /> : <Register />} 
         />
         
+        {/* Protected Routes - Require Authentication */}
         <Route element={<ProtectedRoute user={user} />}>
           <Route path="/home" element={<Home />} />
           
@@ -53,9 +62,10 @@ function App() {
           <Route path="/community" element={<Community />} />
         </Route>
 
+        {/* Catch all - redirect based on auth status */}
         <Route 
           path="*" 
-          element={<Navigate to={user ? "/home" : "/login"} />} 
+          element={<Navigate to={user ? "/home" : "/"} />} 
         />
       </Routes>
     </BrowserRouter>
