@@ -2,9 +2,12 @@ import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useChatRoom } from '../hooks/useChatRoom'
 import { useQuotes } from '../hooks/useQuotes'
+import { useCounselors } from '../hooks/useCounselors'
+import { supabase } from '../lib/supabaseClient'
 import Navbar from '../components/Layout/Navbar'
 import ChatInterface from '../components/Chat/ChatInterface'
-import { MessageCircle, Trash2, Plus, AlertCircle } from 'lucide-react'
+import CounselorSelector from '../components/Chat/CounselorSelector'
+import { MessageCircle, Trash2, Plus, AlertCircle, Users, ChevronLeft } from 'lucide-react'
 
 export default function StudentChat() {
   const { user } = useAuth()
@@ -13,15 +16,63 @@ export default function StudentChat() {
     'student'
   )
   const { quote, loading: quoteLoading } = useQuotes()
+  const { counselors, loading: counselorsLoading } = useCounselors()
+  
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [showCounselorSelector, setShowCounselorSelector] = useState(false)
 
-  const handleCreateChatRoom = async () => {
+  const handleShowCounselorSelector = () => {
+    setShowCounselorSelector(true)
+  }
+
+  const handleCancelSelection = () => {
+    setShowCounselorSelector(false)
+  }
+
+  const handleSelectCounselor = async (selectedCounselor) => {
     setCreating(true)
-    const { error } = await createChatRoom()
+    setShowCounselorSelector(false)
+
+    // Tạo phòng chat
+    const { data: newRoom, error } = await createChatRoom()
     
     if (error) {
       alert('Không thể tạo phòng chat. Vui lòng thử lại.')
+      setCreating(false)
+      return
+    }
+
+    // Nếu có chọn tư vấn viên, gửi tin nhắn tự động
+    if (selectedCounselor && newRoom) {
+      const preferenceMessage = `👋 Xin chào! Em mong muốn được tư vấn viên ${selectedCounselor.displayName} hỗ trợ. Cảm ơn các thầy/cô!`
+      
+      try {
+        await supabase
+          .from('chat_messages')
+          .insert({
+            chat_room_id: newRoom.id,
+            sender_id: user.id,
+            content: preferenceMessage
+          })
+      } catch (err) {
+        console.error('Error sending preference message:', err)
+      }
+    } else if (newRoom) {
+      // Không chọn tư vấn viên cụ thể - gửi tin nhắn chào mừng
+      const welcomeMessage = `👋 Xin chào! Em cần được tư vấn. Mong các thầy/cô hỗ trợ em ạ!`
+      
+      try {
+        await supabase
+          .from('chat_messages')
+          .insert({
+            chat_room_id: newRoom.id,
+            sender_id: user.id,
+            content: welcomeMessage
+          })
+      } catch (err) {
+        console.error('Error sending welcome message:', err)
+      }
     }
     
     setCreating(false)
@@ -69,45 +120,79 @@ export default function StudentChat() {
 
         {/* No Chat Room - Create Prompt */}
         {!chatRoom && (
-          <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
-            <div className="mb-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MessageCircle size={40} className="text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-3">
-                Bạn chưa có phòng tư vấn
-              </h2>
-              <p className="text-gray-600 mb-2">
-                Tạo phòng tư vấn để kết nối với các tư vấn viên
-              </p>
-              <p className="text-sm text-gray-500 mb-6">
-                Tất cả tư vấn viên đều có thể xem và trả lời tin nhắn của bạn
-              </p>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-left">
-              <div className="flex items-start gap-3">
-                <AlertCircle size={20} className="text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-blue-800">
-                  <p className="font-semibold mb-2">Lưu ý:</p>
-                  <ul className="list-disc list-inside space-y-1">
-                    <li>Bạn chỉ có thể có một phòng tư vấn tại một thời điểm</li>
-                    <li>Tin nhắn của bạn được mã hóa và bảo mật</li>
-                    <li>Các tư vấn viên sẽ trả lời nhanh nhất có thể</li>
-                    <li>Bạn sẽ thấy tên của tư vấn viên trong mỗi tin nhắn</li>
-                  </ul>
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            {!showCounselorSelector ? (
+              // Initial view - Show create button
+              <div className="text-center">
+                <div className="mb-6">
+                  <div className="w-20 h-20 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <MessageCircle size={40} className="text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                    Bạn chưa có phòng tư vấn
+                  </h2>
+                  <p className="text-gray-600 mb-2">
+                    Tạo phòng tư vấn để kết nối với các tư vấn viên
+                  </p>
+                  <p className="text-sm text-gray-500 mb-6">
+                    Tất cả tư vấn viên đều có thể xem và trả lời tin nhắn của bạn
+                  </p>
                 </div>
-              </div>
-            </div>
 
-            <button
-              onClick={handleCreateChatRoom}
-              disabled={creating}
-              className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-3 mx-auto"
-            >
-              <Plus size={24} />
-              {creating ? 'Đang tạo...' : 'Tạo phòng tư vấn'}
-            </button>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-left max-w-md mx-auto">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle size={20} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-blue-800">
+                      <p className="font-semibold mb-2">Lưu ý:</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Bạn chỉ có thể có một phòng tư vấn tại một thời điểm</li>
+                        <li>Tin nhắn của bạn được mã hóa và bảo mật</li>
+                        <li>Các tư vấn viên sẽ trả lời nhanh nhất có thể</li>
+                        <li>Bạn sẽ thấy tên của tư vấn viên trong mỗi tin nhắn</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleShowCounselorSelector}
+                  disabled={creating || counselorsLoading}
+                  className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-3 mx-auto shadow-lg"
+                >
+                  {creating ? (
+                    <>
+                      <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Đang tạo...
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={24} />
+                      Tạo phòng tư vấn
+                    </>
+                  )}
+                </button>
+
+                {/* Counselors count preview */}
+                {!counselorsLoading && counselors.length > 0 && (
+                  <div className="mt-6 flex items-center justify-center gap-2 text-gray-600">
+                    <Users size={18} />
+                    <span className="text-sm">
+                      {counselors.length} tư vấn viên đang sẵn sàng hỗ trợ
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Expanded view - Show counselor selector
+              <div className="animate-fade-in">
+                <CounselorSelector
+                  counselors={counselors}
+                  loading={counselorsLoading}
+                  onSelect={handleSelectCounselor}
+                  onCancel={handleCancelSelection}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -161,6 +246,10 @@ export default function StudentChat() {
             💡 Mẹo sử dụng phòng tư vấn
           </h3>
           <ul className="space-y-2 text-sm text-gray-600">
+            <li className="flex items-start gap-2">
+              <span className="text-purple-500 font-bold">•</span>
+              <span>Bạn có thể chọn tư vấn viên mà bạn muốn khi tạo phòng</span>
+            </li>
             <li className="flex items-start gap-2">
               <span className="text-purple-500 font-bold">•</span>
               <span>Hãy chia sẻ những gì bạn cảm thấy thoải mái</span>
