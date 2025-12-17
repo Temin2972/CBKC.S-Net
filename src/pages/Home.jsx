@@ -129,48 +129,6 @@ export default function Home() {
             </div>
           </Link>
         </div>
-        
-        
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {/* Community Card - giữ nguyên */}
-          <Link
-            to="www.facebook.com/Bucthuchieuthu6"
-            className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer"
-          >
-            <div className="inline-block p-4 bg-gradient-to-br from-purple-100 to-pink-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
-              <Users size={40} className="text-purple-600" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">
-              BTCT6
-            </h3>
-            <p className="text-gray-600">
-              Truy cập fanpage Bức Thư Chiều Thứ 6
-            </p>
-            <div className="mt-4 flex items-center gap-2 text-sm text-purple-600">
-              <Shield size={16} />
-              <span> </span>
-            </div>
-          </Link>
-          {/* Community Card - giữ nguyên */}
-          <Link
-            to="www.docs.google.com/forms/d/e/1FAIpQLSfkEdnDGQ23qAX8PKsj9O5DMn4ilu9Yc36qyL0xntdzemtujQ/viewform?pli=1"
-            className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer"
-          >
-            <div className="inline-block p-4 bg-gradient-to-br from-purple-100 to-pink-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
-              <Users size={40} className="text-purple-600" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">
-              Đặt lịch
-            </h3>
-            <p className="text-gray-600">
-              Đặt lịch xuống phòng tham vấn tâm lý
-            </p>
-            <div className="mt-4 flex items-center gap-2 text-sm text-purple-600">
-              <Shield size={16} />
-              <span>Cần thông tin cá nhân</span>
-            </div>
-          </Link>
-        </div>
 
         {/* Simple Quote Section */}
         {!quoteLoading && quote && (
@@ -229,7 +187,6 @@ export default function Home() {
           </div>
         )}
       </div>
-
       {/* Footer */}
       <footer className="bg-white/10 backdrop-blur-md border-t border-white/20 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center text-white/80">
