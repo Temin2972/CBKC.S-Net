@@ -137,7 +137,7 @@ export default function Home() {
             className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer"
           >
             <div className="inline-block p-4 bg-gradient-to-br from-purple-100 to-pink-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
-              <Users size={40} className="text-purple-600" />
+              <Heart  size={40} className="text-red-600" />
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-2">
               BTCT6
@@ -155,7 +155,7 @@ export default function Home() {
             className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer"
           >
             <div className="inline-block p-4 bg-gradient-to-br from-purple-100 to-pink-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
-              <Users size={40} className="text-purple-600" />
+              <CalendarClock  size={40} className="text-purple-600" />
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-2">
               Đặt lịch
