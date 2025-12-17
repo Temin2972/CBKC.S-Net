@@ -102,7 +102,7 @@ export default function Home() {
 
             <div className="mt-4 flex items-center gap-2 text-sm text-green-600">
               <Clock size={16} />
-              <span>Hoạt động: 7:00 - 22:00</span>
+              <span>Hoạt động: 8:00 - 17:00</span>
             </div>
 
             {/* Hiệu ứng glow khi có tin nhắn mới */}
@@ -111,7 +111,7 @@ export default function Home() {
             )}
           </Link>
 
-          {/* Community Card - giữ nguyên */}
+          {/* Community Card */}
           <Link
             to="/community"
             className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer"
@@ -129,7 +129,7 @@ export default function Home() {
             </p>
             <div className="mt-4 flex items-center gap-2 text-sm text-purple-600">
               <Shield size={16} />
-              <span>100% Ẩn danh</span>
+              <span>Ẩn danh hoàn toàn</span>
             </div>
           </Link>
         </div>
@@ -191,20 +191,20 @@ export default function Home() {
           </a>
         </div>
 
-        {/* Simple Quote Section */}
-        {!quoteLoading && quote && (
-          <div className="mt-8 max-w-4xl mx-auto">
-            <div className="p-6 text-center">
-              <p className="text-xl text-white">
-                "{quote.content}"
+	{/* Quote Section */}
+	{!quoteLoading && quote && (
+        <div className="max-w-4xl mx-auto px-4 py-12">
+          <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 text-center">
+            <p className="text-2xl text-white mb-3">
+              "{quote.content}"
+            </p>
+            {quote.author && (
+              <p className="text-lg text-white/80">
+                — {quote.author} —
               </p>
-              {quote.author && (
-                <p className="text-sm text-white">
-                  — {quote.author} —
-                </p>
-              )}
-            </div>
+            )}
           </div>
+        </div>
         )}
         
         {/* Caution Section - Only for counselors/admins */}
