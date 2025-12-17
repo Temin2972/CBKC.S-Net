@@ -1,4 +1,4 @@
-import { MessageCircle, Users, Clock, Shield, Bell } from 'lucide-react'
+import { MessageCircle, Users, Clock, Shield, Bell, Heart, CalendarClock, ExternalLink } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuotes } from '../hooks/useQuotes'
@@ -6,6 +6,9 @@ import { useUnreadMessages } from '../hooks/useUnreadMessages'
 import Navbar from '../components/Layout/Navbar'
 import CautionSection from '../components/Counselor/CautionSection'
 import PendingSection from '../components/Counselor/PendingSection'
+
+const FACEBOOK_FANPAGE_URL = 'https://www.facebook.com/Bucthuchieuthu6' // Fanpage BTCT6
+const BOOKING_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfkEdnDGQ23qAX8PKsj9O5DMn4ilu9Yc36qyL0xntdzemtujQ/viewform?pli=1' // Form đặt lịch
 
 export default function Home() {
   const { user } = useAuth()
@@ -36,6 +39,7 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Main Features */}
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {/* Chat Card - với thông báo tin nhắn mới */}
           <Link
@@ -129,45 +133,62 @@ export default function Home() {
             </div>
           </Link>
         </div>
-        
-        
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-8">
-          <Link
-            to="https://www.facebook.com/Bucthuchieuthu6"
-            className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer"
+
+        {/* Additional Features - Facebook & Booking */}
+        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-6">
+          {/* Facebook Fanpage */}
+          <a
+            href={FACEBOOK_FANPAGE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer relative overflow-hidden"
           >
-            <div className="inline-block p-4 bg-gradient-to-br from-purple-100 to-pink-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
-              <Users size={40} className="text-purple-600" />
+            <div className="inline-block p-4 bg-gradient-to-br from-red-100 to-pink-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
+              <Heart size={40} className="text-red-500" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">
+            <h3 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
               BTCT6
+              <ExternalLink size={18} className="text-gray-400" />
             </h3>
             <p className="text-gray-600">
               Truy cập fanpage Bức Thư Chiều Thứ 6
             </p>
-            <div className="mt-4 flex items-center gap-2 text-sm text-purple-600">
-              <Shield size={16} />
-              <span>Chuyển sang Facebook</span>
+            <div className="mt-4 flex items-center gap-2 text-sm text-red-600">
+              <Heart size={16} className="fill-red-600" />
+              <span>Nhấn để truy cập</span>
             </div>
-          </Link>
-          <Link
-            to="https://www.docs.google.com/forms/d/e/1FAIpQLSfkEdnDGQ23qAX8PKsj9O5DMn4ilu9Yc36qyL0xntdzemtujQ/viewform?pli=1"
-            className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer"
+
+            {/* Gradient glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-red-400/10 to-pink-400/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-2xl"></div>
+          </a>
+
+          {/* Booking Form */}
+          <a
+            href={BOOKING_FORM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer relative overflow-hidden"
           >
-            <div className="inline-block p-4 bg-gradient-to-br from-purple-100 to-pink-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
-              <Users size={40} className="text-purple-600" />
+            <div className="inline-block p-4 bg-gradient-to-br from-green-100 to-teal-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
+              <CalendarClock size={40} className="text-green-600" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">
-              Đặt lịch
+            <h3 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+              Đặt lịch tư vấn
+              <ExternalLink size={18} className="text-gray-400" />
             </h3>
             <p className="text-gray-600">
-              Đặt lịch phòng tham vấn tâm lý
+              {isCounselor 
+                ? 'Form đặt lịch hẹn'
+                : 'Đặt lịch hẹn trực tiếp tại phòng tư vấn'}
             </p>
-            <div className="mt-4 flex items-center gap-2 text-sm text-purple-600">
-              <Shield size={16} />
-              <span>Yêu cầu thông tin cá nhân</span>
+            <div className="mt-4 flex items-center gap-2 text-sm text-green-600">
+              <CalendarClock size={16} />
+              <span>Nhấn để đặt lịch</span>
             </div>
-          </Link>
+
+            {/* Gradient glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-green-400/10 to-teal-400/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-2xl"></div>
+          </a>
         </div>
 
         {/* Simple Quote Section */}
@@ -227,26 +248,6 @@ export default function Home() {
           </div>
         )}
       </div>
-      {/* Footer */}
-      <footer className="bg-white/10 backdrop-blur-md border-t border-white/20 py-8">
-        <div className="max-w-7xl mx-auto px-4 text-center text-white/80">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Shield size={24} className="text-white" />
-            <span className="text-xl font-bold text-white">S-Net</span>
-          </div>
-          <p className="text-sm mb-2">
-            Nền tảng hỗ trợ tâm lý học đường
-          </p>
-          <p className="text-xs">
-            © 2025 S-Net by CBKC.
-          </p>
-          <div className="mt-4">
-            <p className="text-xs">
-              Đường dây nóng hỗ trợ tâm lý: <strong>1800 599 920</strong>
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }
