@@ -48,15 +48,15 @@ export default function LandingPage() {
           <div className="inline-block p-4 bg-white/20 backdrop-blur-sm rounded-3xl mb-6">
             <Shield size={80} className="text-white" />
           </div>
-          <h2 className="text-5xl md:text-6xl font-bold text-white mb-8 leading-tight">
+          <h2 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
             Nền tảng hỗ trợ tư vấn tâm lý
             <br />
-            <span className="mt-8 bg-gradient-to-r from-yellow-200 to-pink-200 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-yellow-200 to-pink-200 bg-clip-text text-transparent">
               Dành cho Fschool
             </span>
           </h2>
           <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto">
-            Nơi an toàn để học sinh chia sẻ, được lắng nghe và nhận sự hỗ trợ từ các thầy cô tư vấn tâm lý
+            Nơi an toàn để học sinh chia sẻ, được lắng nghe và nhận sự hỗ trợ từ các tư vấn viên tâm lý chuyên nghiệp
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
@@ -77,7 +77,7 @@ export default function LandingPage() {
       </div>
 
       {/* Features Preview Section */}
-      <div id="features" className="max-w-7xl mx-auto px-8 py-16">
+      <div id="features" className="max-w-7xl mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <h3 className="text-4xl font-bold text-white mb-4">
             Các tính năng nổi bật
