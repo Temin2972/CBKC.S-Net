@@ -79,7 +79,7 @@ export default function CreatePost({ currentUser, onPostCreated }) {
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Chia sẻ câu chuyện của bạn..."
+          placeholder="Bạn đang nghĩ gì?"
           className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
           rows="4"
         />
