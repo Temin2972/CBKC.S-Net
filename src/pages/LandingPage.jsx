@@ -51,7 +51,7 @@ export default function LandingPage() {
           <h2 className="text-5xl md:text-6xl font-bold text-white mb-8 leading-tight">
             Nền tảng hỗ trợ tư vấn tâm lý
             <br />
-            <span className="bg-gradient-to-r from-yellow-200 to-pink-200 bg-clip-text text-transparent">
+            <span className="mt-8 bg-gradient-to-r from-yellow-200 to-pink-200 bg-clip-text text-transparent">
               Dành cho Fschool
             </span>
           </h2>
@@ -77,7 +77,7 @@ export default function LandingPage() {
       </div>
 
       {/* Features Preview Section */}
-      <div id="features" className="max-w-7xl mx-auto px-2 py-16">
+      <div id="features" className="max-w-7xl mx-auto px-8 py-16">
         <div className="text-center mb-12">
           <h3 className="text-4xl font-bold text-white mb-4">
             Các tính năng nổi bật
