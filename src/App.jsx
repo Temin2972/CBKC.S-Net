@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Analytics } from '@vercel/analytics/react'
 import { useAuth } from './hooks/useAuth'
+import { useNotifications } from './hooks/useNotifications'
+import { useTabNotification } from './hooks/useTabNotification'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import LandingPage from './pages/LandingPage'
@@ -13,6 +15,12 @@ import ProtectedRoute from './components/Layout/ProtectedRoute'
 
 function App() {
   const { user, loading } = useAuth()
+  
+  // Lấy số thông báo chưa đọc để hiển thị trên tab
+  const { unreadCount } = useNotifications(user?.id)
+  
+  // Thay đổi title của tab khi có thông báo mới
+  useTabNotification(unreadCount, 'S-Net by CBKC')
 
   if (loading) {
     return (
