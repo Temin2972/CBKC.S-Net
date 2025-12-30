@@ -94,12 +94,16 @@ export function useChatMessages(chatRoomId, currentUserId) {
           table: 'chat_messages',
           filter: `chat_room_id=eq.${chatRoomId}`
         },
-        (payload) => {
+        async (payload) => {
           console.log('New message received:', payload)
           fetchMessages() // Refetch to get sender info
           
-          // TẠO THÔNG BÁO cho người nhận
-          handleNewMessageNotification(payload.new)
+          // TẠO THÔNG BÁO cho người nhận - WRAP IN TRY-CATCH
+          try {
+            await handleNewMessageNotification(payload.new)
+          } catch (error) {
+            console.error('Error creating notification:', error)
+          }
         }
       )
       .on(
@@ -125,12 +129,15 @@ export function useChatMessages(chatRoomId, currentUserId) {
   // Hàm tạo thông báo cho tin nhắn mới
   const handleNewMessageNotification = async (newMessage) => {
     try {
+      console.log('📨 Creating notification for new message:', newMessage)
+
       // Không tạo thông báo cho tin nhắn của chính mình
       if (newMessage.sender_id === currentUserId) {
+        console.log('⏭️ Skipping notification - message from current user')
         return
       }
 
-      // Lấy thông tin chat room và sender
+      // Lấy thông tin chat room
       const { data: chatRoom, error: roomError } = await supabase
         .from('chat_rooms')
         .select('student_id, counselor_id')
@@ -138,9 +145,11 @@ export function useChatMessages(chatRoomId, currentUserId) {
         .single()
 
       if (roomError || !chatRoom) {
-        console.error('Error fetching chat room:', roomError)
+        console.error('❌ Error fetching chat room:', roomError)
         return
       }
+
+      console.log('📋 Chat room info:', chatRoom)
 
       // Lấy thông tin sender
       const { data: sender, error: senderError } = await supabase
@@ -150,9 +159,11 @@ export function useChatMessages(chatRoomId, currentUserId) {
         .single()
 
       if (senderError || !sender) {
-        console.error('Error fetching sender:', senderError)
+        console.error('❌ Error fetching sender:', senderError)
         return
       }
+
+      console.log('👤 Sender info:', sender)
 
       const senderName = sender.full_name || 'Người dùng'
       const senderRole = sender.role
@@ -165,10 +176,12 @@ export function useChatMessages(chatRoomId, currentUserId) {
 
       // Case 1: CHAT RIÊNG (counselor_id !== null)
       if (chatRoom.counselor_id) {
-        // Đây là chat riêng
+        console.log('🔒 Private chat detected')
+        
         if (senderRole === 'student') {
-          // Học sinh gửi -> Thông báo cho counselor được chỉ định và admin
+          // Học sinh gửi -> Thông báo cho counselor được chỉ định
           recipients.push(chatRoom.counselor_id)
+          console.log('➕ Added counselor to recipients:', chatRoom.counselor_id)
           
           // Thông báo cho admin
           const { data: admins } = await supabase
@@ -176,8 +189,9 @@ export function useChatMessages(chatRoomId, currentUserId) {
             .select('id')
             .eq('role', 'admin')
           
-          if (admins) {
+          if (admins && admins.length > 0) {
             recipients.push(...admins.map(a => a.id))
+            console.log('➕ Added admins to recipients:', admins.map(a => a.id))
           }
 
           notificationType = 'new_message'
@@ -187,6 +201,7 @@ export function useChatMessages(chatRoomId, currentUserId) {
         } else if (senderRole === 'counselor' || senderRole === 'admin') {
           // Counselor/Admin gửi -> Thông báo cho học sinh
           recipients.push(chatRoom.student_id)
+          console.log('➕ Added student to recipients:', chatRoom.student_id)
 
           notificationType = 'counselor_replied'
           notificationTitle = '💬 Tư vấn viên đã trả lời'
@@ -196,6 +211,8 @@ export function useChatMessages(chatRoomId, currentUserId) {
       } 
       // Case 2: CHAT CHUNG (counselor_id === null)
       else {
+        console.log('🌐 Public chat detected')
+        
         if (senderRole === 'student') {
           // Học sinh gửi -> Thông báo cho TẤT CẢ counselors và admins
           const { data: counselors } = await supabase
@@ -205,6 +222,7 @@ export function useChatMessages(chatRoomId, currentUserId) {
           
           if (counselors) {
             recipients = counselors.map(c => c.id)
+            console.log('➕ Added all counselors/admins to recipients:', recipients)
           }
 
           notificationType = 'new_message'
@@ -214,6 +232,7 @@ export function useChatMessages(chatRoomId, currentUserId) {
         } else if (senderRole === 'counselor' || senderRole === 'admin') {
           // Counselor gửi -> Thông báo cho học sinh
           recipients.push(chatRoom.student_id)
+          console.log('➕ Added student to recipients:', chatRoom.student_id)
 
           notificationType = 'counselor_replied'
           notificationTitle = '💬 Tư vấn viên đã trả lời'
@@ -226,9 +245,13 @@ export function useChatMessages(chatRoomId, currentUserId) {
       // Loại bỏ duplicate
       recipients = [...new Set(recipients)]
 
+      console.log('📬 Final recipients:', recipients)
+
       // Tạo thông báo cho từng người nhận
       for (const recipientId of recipients) {
-        await createNotification(
+        console.log(`📤 Creating notification for recipient: ${recipientId}`)
+        
+        const result = await createNotification(
           recipientId,
           notificationType,
           notificationTitle,
@@ -240,10 +263,18 @@ export function useChatMessages(chatRoomId, currentUserId) {
             is_private: chatRoom.counselor_id !== null
           }
         )
+
+        if (result.error) {
+          console.error(`❌ Failed to create notification for ${recipientId}:`, result.error)
+        } else {
+          console.log(`✅ Notification created for ${recipientId}`)
+        }
       }
 
+      console.log('✅ All notifications created successfully')
+
     } catch (error) {
-      console.error('Error creating notification for new message:', error)
+      console.error('❌ Error creating notification for new message:', error)
     }
   }
 
