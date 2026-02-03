@@ -1,16 +1,114 @@
-import { Link } from 'react-router-dom'
-import { X, AlertTriangle, Heart, MessageCircle, Shield, Clock } from 'lucide-react'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { X, AlertTriangle, Heart, MessageCircle, Shield, Clock, Phone, Loader2, FileQuestion } from 'lucide-react'
 import { MODERATION_ACTIONS } from '../../lib/contentModeration'
+import { supabase } from '../../lib/supabaseClient'
+import { useAuth } from '../../hooks/useAuth'
+import { createNotification } from '../../hooks/useNotifications'
 
-export default function ContentModerationModal({ 
-  isOpen, 
-  onClose, 
-  action, 
-  title, 
-  message, 
-  showChatSuggestion 
+// Hotline tâm lý quốc gia
+const EMERGENCY_HOTLINE = '1800 599 920'
+
+export default function ContentModerationModal({
+  isOpen,
+  onClose,
+  action,
+  title,
+  message,
+  showChatSuggestion,
+  onRequestAppeal = null, // Callback when user wants to appeal
+  originalContent = '' // Original content for appeal context
 }) {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const [creatingEmergencyChat, setCreatingEmergencyChat] = useState(false)
+
   if (!isOpen) return null
+
+  const isEmergency = action === MODERATION_ACTIONS.REJECT
+
+  // Tạo chat khẩn cấp và thông báo cho tất cả counselors
+  const handleEmergencyChat = async () => {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+
+    setCreatingEmergencyChat(true)
+
+    try {
+      // Kiểm tra xem user đã có chat room chưa
+      const { data: existingRoom } = await supabase
+        .from('chat_rooms')
+        .select('id')
+        .eq('student_id', user.id)
+        .single()
+
+      let roomId = existingRoom?.id
+
+      // Nếu chưa có, tạo mới
+      if (!roomId) {
+        const { data: newRoom, error: createError } = await supabase
+          .from('chat_rooms')
+          .insert({
+            student_id: user.id,
+            counselor_id: null // Public chat để tất cả counselors thấy
+          })
+          .select()
+          .single()
+
+        if (createError) throw createError
+        roomId = newRoom.id
+
+        // Gửi tin nhắn đầu tiên để counselors thấy ngay
+        await supabase
+          .from('chat_messages')
+          .insert({
+            chat_room_id: roomId,
+            sender_id: user.id,
+            content: '🆘 Tôi cần được hỗ trợ khẩn cấp. Tôi đang trải qua giai đoạn rất khó khăn.'
+          })
+      }
+
+      // Thông báo khẩn cấp cho TẤT CẢ counselors và admins
+      const { data: counselors } = await supabase
+        .from('users')
+        .select('id')
+        .in('role', ['counselor', 'admin'])
+
+      if (counselors && counselors.length > 0) {
+        const studentName = user.user_metadata?.full_name || 'Học sinh'
+
+        // Gửi notification khẩn cấp cho từng counselor
+        const notificationPromises = counselors.map(counselor =>
+          createNotification(
+            counselor.id,
+            'emergency_chat',
+            '🚨 YÊU CẦU HỖ TRỢ KHẨN CẤP',
+            `${studentName} cần được hỗ trợ tâm lý ngay lập tức!`,
+            '/chat',
+            {
+              student_id: user.id,
+              chat_room_id: roomId,
+              urgency: 'critical'
+            }
+          )
+        )
+
+        await Promise.all(notificationPromises)
+      }
+
+      // Chuyển đến trang chat
+      onClose()
+      navigate('/chat')
+
+    } catch (error) {
+      console.error('Error creating emergency chat:', error)
+      alert('Có lỗi xảy ra. Vui lòng thử lại hoặc gọi đường dây nóng.')
+    } finally {
+      setCreatingEmergencyChat(false)
+    }
+  }
 
   const getIcon = () => {
     switch (action) {
@@ -41,7 +139,7 @@ export default function ContentModerationModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
@@ -64,8 +162,51 @@ export default function ContentModerationModal({
             {message}
           </p>
 
-          {/* Chat Suggestion */}
-          {showChatSuggestion && (
+          {/* Emergency Action Section - Only for REJECT (severe distress) */}
+          {isEmergency && (
+            <div className="space-y-4 mb-6">
+              {/* Primary Emergency CTA - Chat */}
+              <button
+                onClick={handleEmergencyChat}
+                disabled={creatingEmergencyChat}
+                className="w-full py-4 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-bold text-lg hover:from-red-600 hover:to-rose-600 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center justify-center gap-3 animate-pulse hover:animate-none"
+              >
+                {creatingEmergencyChat ? (
+                  <>
+                    <Loader2 size={24} className="animate-spin" />
+                    Đang kết nối...
+                  </>
+                ) : (
+                  <>
+                    <MessageCircle size={24} />
+                    🆘 Chat Khẩn cấp với Tư vấn viên
+                  </>
+                )}
+              </button>
+
+              {/* Hotline */}
+              <a
+                href={`tel:${EMERGENCY_HOTLINE.replace(/\s/g, '')}`}
+                className="w-full py-3 bg-white border-2 border-red-500 text-red-600 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-red-50 transition-colors"
+              >
+                <Phone size={20} />
+                Gọi đường dây nóng: {EMERGENCY_HOTLINE}
+              </a>
+
+              {/* Divider */}
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">hoặc</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Regular Chat Suggestion - For non-emergency cases */}
+          {showChatSuggestion && !isEmergency && (
             <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-6">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-purple-100 rounded-lg">
@@ -85,7 +226,7 @@ export default function ContentModerationModal({
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-3">
-            {showChatSuggestion && (
+            {showChatSuggestion && !isEmergency && (
               <Link
                 to="/chat"
                 className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold text-center hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center gap-2"
@@ -94,27 +235,39 @@ export default function ContentModerationModal({
                 Chat với tư vấn viên ngay
               </Link>
             )}
-            
+
+            {/* Appeal button - only show for BLOCK action and when callback is provided */}
+            {action === MODERATION_ACTIONS.BLOCK && onRequestAppeal && (
+              <button
+                onClick={onRequestAppeal}
+                className="w-full py-3 bg-blue-50 border border-blue-200 text-blue-600 rounded-xl font-medium hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+              >
+                <FileQuestion size={18} />
+                Yêu cầu xem xét lại
+              </button>
+            )}
+
             <button
               onClick={onClose}
-              className={`w-full py-3 rounded-xl font-semibold transition-all ${
-                showChatSuggestion 
+              className={`w-full py-3 rounded-xl font-semibold transition-all ${isEmergency
+                ? 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                : showChatSuggestion
                   ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600'
-              }`}
+                }`}
             >
-              {showChatSuggestion ? 'Để sau' : 'Đã hiểu'}
+              {isEmergency ? 'Để sau (không khuyến khích)' : showChatSuggestion ? 'Để sau' : 'Đã hiểu'}
             </button>
           </div>
 
-          {/* Hotline Info for severe cases */}
-          {action === MODERATION_ACTIONS.REJECT && (
+          {/* Reassurance message for emergency */}
+          {isEmergency && (
             <div className="mt-6 pt-4 border-t border-gray-200 text-center">
-              <p className="text-xs text-gray-400 mb-2">
-                Nếu bạn đang trong tình trạng khẩn cấp:
+              <p className="text-sm text-gray-600 mb-2">
+                ❤️ Bạn không đơn độc. Chúng tôi ở đây để hỗ trợ bạn.
               </p>
-              <p className="text-sm font-semibold text-red-600">
-                Đường dây nóng hỗ trợ tâm lý: 1800 599 920
+              <p className="text-xs text-gray-400">
+                Tất cả cuộc trò chuyện đều được bảo mật và tôn trọng.
               </p>
             </div>
           )}

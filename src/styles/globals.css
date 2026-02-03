@@ -385,3 +385,401 @@ body {
 .blob-2 {
   animation: float-delayed 7s ease-in-out infinite;
 }
+
+/* ===== NEW SMOOTH ANIMATIONS ===== */
+
+/* Fade animations */
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Slide animations */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pop animation */
+@keyframes pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Shake animation for errors */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Heartbeat animation */
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.1); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.05); }
+}
+
+/* Spin slow */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Wiggle animation */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+/* Typing cursor */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Wave animation for icons */
+@keyframes wave {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+  60%, 100% { transform: rotate(0deg); }
+}
+
+/* Floating with rotation */
+@keyframes float-rotate {
+  0%, 100% { 
+    transform: translateY(0) rotate(0deg); 
+  }
+  50% { 
+    transform: translateY(-10px) rotate(3deg); 
+  }
+}
+
+/* Gradient border animation */
+@keyframes gradient-border {
+  0%, 100% { border-color: #a855f7; }
+  33% { border-color: #ec4899; }
+  66% { border-color: #14b8a6; }
+}
+
+/* Ripple effect */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Animation utility classes */
+.animate-fade-in-down { animation: fade-in-down 0.5s ease-out forwards; }
+.animate-fade-in-scale { animation: fade-in-scale 0.4s ease-out forwards; }
+.animate-slide-up { animation: slide-up 0.5s ease-out forwards; }
+.animate-slide-down { animation: slide-down 0.5s ease-out forwards; }
+.animate-pop { animation: pop 0.4s ease-out forwards; }
+.animate-shake { animation: shake 0.5s ease-in-out; }
+.animate-heartbeat { animation: heartbeat 1.5s ease-in-out infinite; }
+.animate-spin-slow { animation: spin-slow 3s linear infinite; }
+.animate-wiggle { animation: wiggle 1s ease-in-out infinite; }
+.animate-blink { animation: blink 1s step-end infinite; }
+.animate-wave { animation: wave 2.5s ease-in-out infinite; }
+.animate-float-rotate { animation: float-rotate 4s ease-in-out infinite; }
+.animate-gradient-border { animation: gradient-border 3s ease-in-out infinite; }
+
+/* Hover animation triggers */
+.hover-pop:hover { animation: pop 0.3s ease-out; }
+.hover-wiggle:hover { animation: wiggle 0.5s ease-in-out; }
+.hover-heartbeat:hover { animation: heartbeat 0.5s ease-in-out; }
+
+/* Page transition wrapper */
+.page-transition {
+  animation: fade-in-up 0.4s ease-out;
+}
+
+/* Card entrance animations */
+.card-enter {
+  animation: slide-up 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.card-enter-1 { animation-delay: 0.05s; }
+.card-enter-2 { animation-delay: 0.1s; }
+.card-enter-3 { animation-delay: 0.15s; }
+.card-enter-4 { animation-delay: 0.2s; }
+.card-enter-5 { animation-delay: 0.25s; }
+
+/* List item animations */
+.list-item-enter {
+  animation: fade-in-scale 0.3s ease-out forwards;
+  opacity: 0;
+}
+
+/* Button press effect */
+.btn-press {
+  transition: transform 0.1s ease;
+}
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* Smooth hover transitions */
+.smooth-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Icon hover effects */
+.icon-hover {
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.icon-hover:hover {
+  transform: scale(1.15);
+}
+
+/* Link underline animation */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: currentColor;
+  transition: width 0.3s ease;
+}
+.link-underline:hover::after {
+  width: 100%;
+}
+
+/* Loading skeleton */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Notification badge pulse */
+.badge-pulse {
+  position: relative;
+}
+.badge-pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: ripple 1.5s ease-out infinite;
+}
+
+/* Toast notification entrance */
+.toast-enter {
+  animation: slide-in-right 0.3s ease-out forwards;
+}
+
+/* Modal animations */
+.modal-overlay-enter {
+  animation: fade-in-scale 0.2s ease-out forwards;
+}
+
+.modal-content-enter {
+  animation: pop 0.3s ease-out forwards;
+}
+
+/* Message bubble animation */
+.message-enter {
+  animation: fade-in-scale 0.2s ease-out forwards;
+}
+
+/* Typing indicator */
+.typing-dot {
+  animation: bounce-slow 1.4s ease-in-out infinite;
+}
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Success checkmark */
+@keyframes checkmark {
+  0% {
+    stroke-dashoffset: 50;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-checkmark {
+  stroke-dasharray: 50;
+  stroke-dashoffset: 50;
+  animation: checkmark 0.5s ease-out forwards;
+}
+
+/* Scroll reveal */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.6s ease-out;
+}
+
+.scroll-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Parallax effect */
+.parallax {
+  transition: transform 0.1s ease-out;
+}
+
+/* ===== CALM MODE ===== */
+/* Activated via .calm-mode class on document root */
+/* Reduces animations, visual noise, and increases focus */
+
+.calm-mode,
+.calm-mode *,
+.calm-mode *::before,
+.calm-mode *::after {
+  /* Disable all animations */
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  animation-delay: 0ms !important;
+  /* Keep transitions smooth but fast */
+  transition-duration: 0.15s !important;
+}
+
+/* Disable floating orbs in calm mode */
+.calm-mode .floating-orb {
+  display: none !important;
+}
+
+/* Simpler backgrounds in calm mode */
+.calm-mode .bg-animated-gradient {
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%) !important;
+  animation: none !important;
+}
+
+/* Replace glassmorphism with solid backgrounds */
+.calm-mode .glass,
+.calm-mode .glass-card,
+.calm-mode .glass-dark {
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Reduce gradient intensity */
+.calm-mode .gradient-primary {
+  background: #6366f1 !important;
+}
+
+.calm-mode .gradient-hero {
+  background: #6366f1 !important;
+  animation: none !important;
+}
+
+/* Remove pulse animations on important elements */
+.calm-mode .animate-pulse,
+.calm-mode .badge-pulse::after {
+  animation: none !important;
+}
+
+/* Increase contrast for better readability */
+.calm-mode .text-gray-400 {
+  color: #6b7280 !important;
+}
+
+.calm-mode .text-gray-500 {
+  color: #4b5563 !important;
+}
+
+/* Remove decorative blurs */
+.calm-mode .blob {
+  display: none !important;
+}
+
+/* Calmer scrollbar */
+.calm-mode::-webkit-scrollbar-thumb {
+  background: #a5b4fc !important;
+}
+
+/* Remove glow effects */
+.calm-mode .animate-glow,
+.calm-mode .hover-glow:hover {
+  box-shadow: none !important;
+}
+
+/* Breathing indicator for calm mode - the only allowed animation */
+@keyframes breathing {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+
+.calm-mode .breathing-indicator {
+  animation: breathing 4s ease-in-out infinite !important;
+}
+
+/* Reduced motion preference - system level */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+

@@ -37,9 +37,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           
           {/* Brand & Description */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 list-item-enter" style={{ animationDelay: '0.1s' }}>
             <div className="flex items-center gap-2 mb-4">
-              <Heart className="w-8 h-8 text-teal-400" />
+              <Heart className="w-8 h-8 text-teal-400 hover-heartbeat" />
               <span className="text-xl font-bold">S-Net</span>
             </div>
             <p className="text-gray-400 text-sm mb-4">
@@ -51,14 +51,14 @@ export default function Footer() {
           </div>
 
           {/* Hotlines */}
-          <div>
+          <div className="list-item-enter" style={{ animationDelay: '0.2s' }}>
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Phone size={18} className="text-teal-400" />
               Hotline Tâm lý
             </h3>
             <div className="space-y-3">
               {HOTLINES.map((hotline, index) => (
-                <div key={index} className="bg-gray-700/50 rounded-lg p-3">
+                <div key={index} className="bg-gray-700/50 rounded-lg p-3 hover:bg-gray-700 transition-colors duration-200">
                   <a 
                     href={`tel:${hotline.number.replace(/\s/g, '')}`}
                     className="text-teal-400 font-semibold text-lg hover:text-teal-300 transition-colors"
@@ -73,14 +73,14 @@ export default function Footer() {
           </div>
 
           {/* Quick Links */}
-          <div>
+          <div className="list-item-enter" style={{ animationDelay: '0.3s' }}>
             <h3 className="text-lg font-semibold mb-4">Liên kết nhanh</h3>
             <ul className="space-y-2">
               {QUICK_LINKS.map((link, index) => (
                 <li key={index}>
                   <Link
                     to={link.to}
-                    className="flex items-center gap-2 text-gray-400 hover:text-teal-400 transition-colors"
+                    className="flex items-center gap-2 text-gray-400 hover:text-teal-400 transition-all duration-200 hover:translate-x-1"
                   >
                     <link.icon size={16} />
                     <span>{link.label}</span>
@@ -92,7 +92,7 @@ export default function Footer() {
                   href={EXTERNAL_LINKS.FACEBOOK_FANPAGE}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition-colors"
+                  className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition-all duration-200 hover:translate-x-1"
                 >
                   <Facebook size={16} />
                   <span>Bức Thư Chiều Thứ 6</span>
@@ -103,7 +103,7 @@ export default function Footer() {
           </div>
 
           {/* Address */}
-          <div>
+          <div className="list-item-enter" style={{ animationDelay: '0.4s' }}>
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <MapPin size={18} className="text-teal-400" />
               Địa chỉ
@@ -119,7 +119,7 @@ export default function Footer() {
               </p>
               <a 
                 href="mailto:support@snet.fpt.edu.vn"
-                className="flex items-center gap-2 hover:text-teal-400 transition-colors"
+                className="flex items-center gap-2 hover:text-teal-400 transition-all duration-200 hover:translate-x-1"
               >
                 <Mail size={14} />
                 support@snet.fpt.edu.vn

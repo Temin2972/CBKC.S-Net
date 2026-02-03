@@ -24,10 +24,10 @@ export default function PostCard({ post, currentUser, onDelete }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
+    <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold hover-wiggle">
             {post.author?.full_name?.[0] || 'A'}
           </div>
           <div>
@@ -65,17 +65,17 @@ export default function PostCard({ post, currentUser, onDelete }) {
       <div className="flex items-center gap-6 pt-4 border-t border-gray-200">
         <button
           onClick={handleLike}
-          className={`flex items-center gap-2 transition-colors ${
+          className={`flex items-center gap-2 transition-all duration-200 hover-pop ${
             liked ? 'text-pink-600' : 'text-gray-600 hover:text-pink-600'
           }`}
         >
-          <Heart size={20} className={liked ? 'fill-pink-600' : ''} />
+          <Heart size={20} className={`transition-transform ${liked ? 'fill-pink-600 animate-pop' : ''}`} />
           <span className="text-sm">{likes}</span>
         </button>
 
         <button
           onClick={() => setShowComments(!showComments)}
-          className="flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors"
+          className="flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-all duration-200 hover-pop"
         >
           <MessageCircle size={20} />
           <span className="text-sm">Bình luận</span>

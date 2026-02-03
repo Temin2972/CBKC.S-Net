@@ -29,14 +29,14 @@ export default function NotificationBell({ userId }) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+        className={`relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 hover-pop ${unreadCount > 0 ? 'animate-wiggle' : ''}`}
         title="Thông báo"
       >
         <Bell size={20} />
         
         {/* Badge hiển thị số thông báo chưa đọc */}
         {!loading && unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center badge-pulse">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -44,7 +44,7 @@ export default function NotificationBell({ userId }) {
 
       {/* Dropdown */}
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 animate-fade-in-up">
+        <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 modal-content-enter">
           <NotificationList 
             userId={userId} 
             onClose={() => setShowDropdown(false)} 

@@ -55,13 +55,13 @@ export default function Navbar() {
   const isActive = (path) => location.pathname === path
 
   return (
-    <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+    <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm animate-slide-down">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to={ROUTES.HOME} className="flex items-center gap-2 group">
             <div className="relative">
-              <Heart className="w-8 h-8 text-teal-500 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+              <Heart className="w-8 h-8 text-teal-500 group-hover:scale-110 transition-transform hover-heartbeat" strokeWidth={1.5} />
               <div className="absolute inset-0 bg-teal-400/20 blur-lg rounded-full group-hover:bg-teal-400/30 transition-colors" />
             </div>
             <span className="text-xl font-semibold text-gray-800">S-Net</span>
@@ -99,19 +99,20 @@ export default function Navbar() {
               </button>
 
               {showMore && (
-                <div className="absolute top-full left-0 mt-2 py-2 bg-white rounded-xl shadow-lg border border-gray-100 min-w-[160px] z-50">
-                  {MORE_ITEMS.map(({ path, icon: Icon, label }) => (
+                <div className="absolute top-full left-0 mt-2 py-2 bg-white rounded-xl shadow-lg border border-gray-100 min-w-[160px] z-50 modal-content-enter">
+                  {MORE_ITEMS.map(({ path, icon: Icon, label }, index) => (
                     <Link
                       key={path}
                       to={path}
                       onClick={() => setShowMore(false)}
-                      className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                      className={`flex items-center gap-2 px-4 py-2 text-sm transition-all duration-200 list-item-enter ${
                         isActive(path)
                           ? 'bg-teal-50 text-teal-600'
                           : 'text-gray-600 hover:bg-gray-50 hover:text-teal-600'
                       }`}
+                      style={{ animationDelay: `${index * 0.05}s` }}
                     >
-                      <Icon size={16} />
+                      <Icon size={16} className="group-hover:scale-110 transition-transform" />
                       <span>{label}</span>
                     </Link>
                   ))}
@@ -145,11 +146,12 @@ export default function Navbar() {
               </button>
 
               {showUserMenu && (
-                <div className="absolute top-full right-0 mt-2 py-2 bg-white rounded-xl shadow-lg border border-gray-100 min-w-[180px] z-50">
+                <div className="absolute top-full right-0 mt-2 py-2 bg-white rounded-xl shadow-lg border border-gray-100 min-w-[180px] z-50 modal-content-enter">
                   <Link
                     to={ROUTES.PROFILE}
                     onClick={() => setShowUserMenu(false)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-teal-600 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-teal-600 transition-all duration-200 list-item-enter"
+                    style={{ animationDelay: '0.05s' }}
                   >
                     <User size={16} />
                     <span>Trang cá nhân</span>
@@ -157,7 +159,8 @@ export default function Navbar() {
                   <div className="h-px bg-gray-100 my-1" />
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200 list-item-enter"
+                    style={{ animationDelay: '0.1s' }}
                   >
                     <LogOut size={16} />
                     <span>Đăng xuất</span>

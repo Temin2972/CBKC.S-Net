@@ -118,7 +118,14 @@ export default function ChatInterface({ chatRoom, currentUser }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-gray-500">Đang tải tin nhắn...</div>
+        <div className="text-gray-500 animate-pulse">
+          <div className="flex items-center gap-2">
+            <div className="typing-dot"></div>
+            <div className="typing-dot" style={{ animationDelay: '0.2s' }}></div>
+            <div className="typing-dot" style={{ animationDelay: '0.4s' }}></div>
+            <span className="ml-2">Đang tải tin nhắn...</span>
+          </div>
+        </div>
       </div>
     )
   }
@@ -136,13 +143,14 @@ export default function ChatInterface({ chatRoom, currentUser }) {
           </div>
         ) : (
           <>
-            {messages.map((message) => (
+            {messages.map((message, index) => (
               <div
                 key={message.id}
-                className={`flex ${message.is_mine ? 'justify-end' : 'justify-start'}`}
+                className={`flex message-enter ${message.is_mine ? 'justify-end' : 'justify-start'}`}
+                style={{ animationDelay: `${Math.min(index * 0.05, 0.5)}s` }}
               >
                 <div
-                  className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                  className={`max-w-[70%] rounded-2xl px-4 py-2 transition-all duration-200 hover:shadow-md ${
                     message.is_mine
                       ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                       : 'bg-white text-gray-800 border border-gray-200'

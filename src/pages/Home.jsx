@@ -1,294 +1,342 @@
 /**
- * Home Page Component
- * Dashboard with feature cards and notifications
+ * Home Page Component - Completely Redesigned
+ * Modern dashboard with clean cards and improved UX
  */
-import { MessageCircle, Users, Clock, Shield, Bell, Heart, CalendarClock } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import {
+  MessageCircle, Users, Clock, Shield, Bell, Heart,
+  CalendarClock, Sparkles, ArrowRight, Moon, Sun,
+  Activity, BookOpen, Star
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useQuotes } from '../hooks/useQuotes'
 import { useUnreadMessages } from '../hooks/useUnreadMessages'
-import { Card } from '../components/UI'
 import Navbar from '../components/Layout/Navbar'
 import Footer from '../components/Layout/Footer'
 import CautionSection from '../components/Counselor/CautionSection'
 import PendingSection from '../components/Counselor/PendingSection'
-import NotificationPermissionPrompt from '../components/Notifications/NotificationPermissionPrompt'
 import { ROUTES, EXTERNAL_LINKS, OPERATING_HOURS } from '../constants'
-import { HOME_MESSAGES } from '../constants/messages'
 import { getUserDisplayName } from '../utils/helpers'
-
-// Background image - Psychology room (blurred)
-const HOME_BG = 'https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1920&q=80'
-
-// Feature card configuration
-const getFeatureCards = (isCounselor, hasNewMessages, unreadCount) => [
-  {
-    to: ROUTES.CHAT,
-    icon: MessageCircle,
-    title: isCounselor ? 'Phòng Tư vấn' : 'Chat với giáo viên tâm lý',
-    description: isCounselor
-      ? 'Xem và trả lời các yêu cầu tư vấn từ học sinh'
-      : 'Kết nối trực tiếp với giáo viên tâm lý để được hỗ trợ ngay lập tức',
-    badge: hasNewMessages ? `${unreadCount} mới` : null,
-    iconBg: hasNewMessages
-      ? 'bg-gradient-to-br from-orange-400 to-red-400'
-      : 'bg-gradient-to-br from-blue-100 to-blue-200',
-    iconColor: hasNewMessages ? 'text-white' : 'text-blue-600',
-    highlighted: hasNewMessages,
-    footer: { icon: Clock, text: `Hoạt động: ${OPERATING_HOURS.DISPLAY}`, color: 'text-green-600' },
-  },
-  {
-    to: ROUTES.COMMUNITY,
-    icon: Users,
-    title: 'Cộng đồng Ẩn danh',
-    description: isCounselor
-      ? 'Giám sát và hỗ trợ trong cộng đồng học sinh'
-      : 'Chia sẻ câu chuyện và kết nối với những người cùng hoàn cảnh',
-    iconBg: 'bg-gradient-to-br from-purple-100 to-pink-200',
-    iconColor: 'text-purple-600',
-    footer: { icon: Shield, text: 'Ẩn danh hoàn toàn', color: 'text-purple-600' },
-  },
-]
-
-const getSecondaryCards = (isCounselor) => [
-  {
-    to: ROUTES.BOOKING,
-    icon: CalendarClock,
-    title: 'Đặt lịch tư vấn',
-    description: isCounselor ? 'Xem lịch hẹn của học sinh' : 'Đặt lịch hẹn trực tiếp tại phòng tư vấn',
-    iconBg: 'bg-gradient-to-br from-green-100 to-teal-200',
-    iconColor: 'text-green-600',
-    footer: { icon: CalendarClock, text: 'Nhấn để đặt lịch', color: 'text-green-600' },
-    external: false,
-  },
-  {
-    to: EXTERNAL_LINKS.FACEBOOK_FANPAGE,
-    icon: Heart,
-    title: 'BTCT6',
-    description: 'Truy cập fanpage Bức Thư Chiều Thứ 6',
-    iconBg: 'bg-gradient-to-br from-red-100 to-pink-200',
-    iconColor: 'text-red-500',
-    footer: { icon: Heart, text: 'Nhấn để truy cập', color: 'text-red-600', fill: true },
-    external: true,
-  },
-]
-
-// Reusable Feature Card Component
-function FeatureCard({ card, hasNewMessages, unreadCount, unreadLoading }) {
-  const CardWrapper = card.external ? 'a' : Link
-  const wrapperProps = card.external
-    ? { href: card.to, target: '_blank', rel: 'noopener noreferrer' }
-    : { to: card.to }
-
-  return (
-    <CardWrapper
-      {...wrapperProps}
-      className={`group relative p-6 rounded-2xl transition-all duration-300 cursor-pointer ${
-        card.highlighted
-          ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 shadow-lg shadow-amber-100'
-          : 'bg-white/70 backdrop-blur-sm border border-gray-100 shadow-sm hover:shadow-lg hover:bg-white hover:-translate-y-1'
-      }`}
-    >
-      {/* Badge for new messages */}
-      {card.badge && !unreadLoading && (
-        <div className="absolute -top-2 -right-2">
-          <div className="relative">
-            <div className="absolute inset-0 bg-rose-400 rounded-full animate-ping opacity-50" />
-            <div className="relative bg-rose-500 text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
-              <Bell size={12} />
-              <span>{card.badge}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Icon */}
-      <div
-        className={`inline-flex items-center justify-center w-12 h-12 rounded-xl mb-4 group-hover:scale-105 transition-transform ${card.iconBg}`}
-      >
-        <card.icon size={24} className={card.iconColor} strokeWidth={1.5} />
-      </div>
-
-      {/* Title */}
-      <h3 className={`text-lg font-semibold mb-2 ${card.highlighted ? 'text-amber-800' : 'text-gray-800'}`}>
-        {card.title}
-      </h3>
-
-      {/* Description */}
-      {card.highlighted && hasNewMessages ? (
-        <div className="space-y-1">
-          <p className="text-amber-700 font-medium">
-            {HOME_MESSAGES.NEW_MESSAGES(unreadCount)}
-          </p>
-          <p className="text-amber-600 text-sm">
-            {card.isCounselor ? HOME_MESSAGES.COUNSELOR_WAITING : HOME_MESSAGES.STUDENT_WAITING}
-          </p>
-        </div>
-      ) : (
-        <p className="text-gray-600 text-sm leading-relaxed">{card.description}</p>
-      )}
-
-      {/* Footer */}
-      {card.footer && (
-        <div className={`mt-4 flex items-center gap-1.5 text-xs ${card.footer.color}`}>
-          <card.footer.icon size={14} className={card.footer.fill ? 'fill-current' : ''} strokeWidth={1.5} />
-          <span>{card.footer.text}</span>
-        </div>
-      )}
-    </CardWrapper>
-  )
-}
-
-// Quote Section Component
-function QuoteSection({ quote, loading }) {
-  if (loading || !quote) return null
-
-  return (
-    <div className="max-w-2xl mx-auto mt-10">
-      <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-gray-100 p-6 text-center">
-        <div className="w-10 h-10 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4">
-          <span className="text-teal-500 text-xl">"</span>
-        </div>
-        <p className="text-gray-700 text-lg italic leading-relaxed mb-3">{quote.content}</p>
-        {quote.author && <p className="text-gray-500 text-sm">— {quote.author}</p>}
-      </div>
-    </div>
-  )
-}
-
-// Counselor Tips Component
-function CounselorTips() {
-  const tips = [
-    {
-      color: 'text-rose-600',
-      bg: 'bg-rose-50',
-      label: 'Khẩn cấp:',
-      text: 'Học sinh có dấu hiệu tự tử hoặc tự gây thương tích',
-    },
-    {
-      color: 'text-amber-600',
-      bg: 'bg-amber-50',
-      label: 'Theo dõi:',
-      text: 'Biểu hiện tiêu cực nhẹ - nên theo dõi thêm',
-    },
-    { 
-      color: 'text-teal-600', 
-      bg: 'bg-teal-50',
-      text: 'AI tự động phân tích và cảnh báo nội dung cần chú ý' 
-    },
-  ]
-
-  return (
-    <div className="mt-8 max-w-2xl mx-auto bg-white/60 backdrop-blur-sm border border-gray-100 rounded-2xl p-5">
-      <h3 className="font-medium text-gray-800 mb-4 flex items-center gap-2">
-        <span className="w-6 h-6 bg-teal-50 rounded-full flex items-center justify-center text-sm">📋</span>
-        Lưu ý cho tư vấn viên
-      </h3>
-      <div className="space-y-2">
-        {tips.map((tip, index) => (
-          <div key={index} className={`flex items-start gap-3 p-3 ${tip.bg} rounded-xl`}>
-            <span className={`${tip.color} font-medium text-sm`}>
-              {tip.label || '•'}
-            </span>
-            <span className="text-gray-700 text-sm">{tip.text}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 export default function Home() {
   const { user, id: userId, role, isCounselor, fullName } = useAuth()
   const { quote, loading: quoteLoading } = useQuotes()
   const { unreadCount, hasNewMessages, loading: unreadLoading } = useUnreadMessages(userId, role)
+  const [currentTime, setCurrentTime] = useState(new Date())
 
   const displayName = fullName || getUserDisplayName(user)
-  const featureCards = getFeatureCards(isCounselor, hasNewMessages, unreadCount)
-  const secondaryCards = getSecondaryCards(isCounselor)
+
+  // Update time every minute
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const getGreeting = () => {
+    const hour = currentTime.getHours()
+    if (hour < 12) return 'Buổi sáng tốt lành'
+    if (hour < 18) return 'Buổi chiều vui vẻ'
+    return 'Buổi tối an lành'
+  }
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative">
       {/* Background Image with blur */}
-      <div 
+      <div
         className="fixed inset-0 z-0"
         style={{
-          backgroundImage: `url(${HOME_BG})`,
+          backgroundImage: `url('/images/background.jpg')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          filter: 'blur(8px) brightness(0.85)'
+          filter: 'blur(3px) brightness(0.9)'
         }}
       />
       {/* Gradient overlay */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-br from-teal-900/30 via-emerald-800/20 to-cyan-900/30" />
-      
-      {/* Floating Orbs for depth */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="floating-orb floating-orb-1"></div>
-        <div className="floating-orb floating-orb-2"></div>
-        <div className="floating-orb floating-orb-3"></div>
-      </div>
-      
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-teal-900/20 via-emerald-800/10 to-cyan-900/20" />
+
+      {/* Content */}
       <div className="relative z-10">
         <Navbar />
-        <NotificationPermissionPrompt userId={userId} />
 
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          {/* Welcome Header */}
-          <header className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/60 backdrop-blur-sm rounded-full text-sm text-teal-700 mb-4 border border-teal-100">
-              <span className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></span>
-              Phòng Tham Vấn Tâm Lý Trực Tuyến
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Hero Section */}
+          <section className="mb-12">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 p-8 md:p-12 text-white shadow-2xl">
+              {/* Background decoration */}
+              <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
+                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-2xl" />
+              </div>
+
+              <div className="relative z-10">
+                {/* Time greeting */}
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm mb-6">
+                  {currentTime.getHours() < 18 ? <Sun size={16} /> : <Moon size={16} />}
+                  <span>{getGreeting()}</span>
+                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                  <span className="text-white/80">Đang hoạt động</span>
+                </div>
+
+                <h1 className="text-3xl md:text-5xl font-bold mb-4">
+                  Xin chào, <span className="text-pink-200">{displayName}</span>! 👋
+                </h1>
+
+                <p className="text-lg md:text-xl text-white/90 max-w-2xl mb-8">
+                  {isCounselor
+                    ? 'Chào mừng bạn trở lại! Hãy bắt đầu ngày mới bằng việc hỗ trợ các học sinh.'
+                    : 'Đây là không gian an toàn để bạn được lắng nghe, chia sẻ và hỗ trợ.'}
+                </p>
+
+                {/* Quick stats for counselors */}
+                {isCounselor && (
+                  <div className="flex flex-wrap gap-4">
+                    <div className="flex items-center gap-3 px-4 py-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                      <Activity size={20} />
+                      <div>
+                        <div className="text-sm text-white/70">Chat đang chờ</div>
+                        <div className="text-xl font-bold">{unreadCount || 0}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 px-4 py-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                      <Clock size={20} />
+                      <div>
+                        <div className="text-sm text-white/70">Thời gian</div>
+                        <div className="text-xl font-bold">
+                          {currentTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* CTA for students */}
+                {!isCounselor && (
+                  <div className="flex flex-wrap gap-4">
+                    <Link
+                      to={ROUTES.CHAT}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-white text-indigo-600 font-semibold rounded-xl hover:bg-white/90 transition-all hover:scale-105 shadow-lg"
+                    >
+                      <MessageCircle size={20} />
+                      Chat với tư vấn viên
+                      <ArrowRight size={16} />
+                    </Link>
+                    <Link
+                      to={ROUTES.COMMUNITY}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur text-white font-semibold rounded-xl hover:bg-white/30 transition-all"
+                    >
+                      <Users size={20} />
+                      Cộng đồng ẩn danh
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
-            <h1 className="text-3xl md:text-4xl font-semibold text-white mb-3 drop-shadow-lg">
-              Xin chào, <span className="text-teal-300">{displayName}</span>
-            </h1>
-            <p className="text-white/90 text-lg max-w-xl mx-auto drop-shadow">
-              {isCounselor 
-                ? 'Chào mừng bạn đến với không gian hỗ trợ học sinh' 
-                : 'Đây là nơi an toàn để bạn được lắng nghe và hỗ trợ'
-              }
-            </p>
-          </header>
+          </section>
 
-          {/* Main Features */}
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {featureCards.map((card, index) => (
-              <FeatureCard
-                key={index}
-                card={card}
-                hasNewMessages={hasNewMessages}
-                unreadCount={unreadCount}
-                unreadLoading={unreadLoading}
-              />
-            ))}
-          </div>
+          {/* Notification Badge */}
+          {hasNewMessages && !unreadLoading && (
+            <div className="mb-8 animate-pulse">
+              <Link
+                to={ROUTES.CHAT}
+                className="flex items-center gap-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl hover:shadow-lg transition-all"
+              >
+                <div className="relative">
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-400 rounded-xl flex items-center justify-center text-white">
+                    <Bell size={24} />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    {unreadCount}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-amber-800">Bạn có {unreadCount} tin nhắn chưa đọc!</h3>
+                  <p className="text-sm text-amber-600">Nhấn vào đây để xem và trả lời</p>
+                </div>
+                <ArrowRight className="text-amber-500" size={20} />
+              </Link>
+            </div>
+          )}
 
-          {/* Secondary Features */}
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-6">
-            {secondaryCards.map((card, index) => (
-              <FeatureCard key={index} card={card} />
-            ))}
-          </div>
+          {/* Main Feature Cards */}
+          <section className="mb-12">
+            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <Sparkles className="text-indigo-500" size={24} />
+              Dịch vụ chính
+            </h2>
 
-          {/* Quote Section */}
-          <QuoteSection quote={quote} loading={quoteLoading} />
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Chat Card */}
+              <Link
+                to={ROUTES.CHAT}
+                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-indigo-200 transition-all duration-300 hover:-translate-y-1"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500" />
+                <div className="relative z-10">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                    <MessageCircle size={28} />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                    {isCounselor ? 'Phòng Tư vấn' : 'Chat Tâm lý'}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    {isCounselor
+                      ? 'Xem và trả lời các yêu cầu tư vấn'
+                      : 'Kết nối với tư vấn viên ngay'}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-emerald-600">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                    Đang hoạt động
+                  </div>
+                </div>
+              </Link>
+
+              {/* Community Card */}
+              <Link
+                to={ROUTES.COMMUNITY}
+                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-purple-200 transition-all duration-300 hover:-translate-y-1"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500" />
+                <div className="relative z-10">
+                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                    <Users size={28} />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Cộng đồng Ẩn danh</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Chia sẻ câu chuyện với sự ẩn danh hoàn toàn
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-purple-600">
+                    <Shield size={14} />
+                    Bảo mật 100%
+                  </div>
+                </div>
+              </Link>
+
+              {/* Booking Card */}
+              <Link
+                to={ROUTES.BOOKING}
+                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-teal-200 transition-all duration-300 hover:-translate-y-1"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-teal-100 to-emerald-100 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500" />
+                <div className="relative z-10">
+                  <div className="w-14 h-14 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                    <CalendarClock size={28} />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Đặt lịch hẹn</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    {isCounselor ? 'Xem các lịch hẹn của học sinh' : 'Đặt lịch gặp tư vấn viên trực tiếp'}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-teal-600">
+                    <Clock size={14} />
+                    {OPERATING_HOURS.DISPLAY}
+                  </div>
+                </div>
+              </Link>
+
+              {/* BTCT6 Card */}
+              <a
+                href={EXTERNAL_LINKS.FACEBOOK_FANPAGE}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-rose-200 transition-all duration-300 hover:-translate-y-1"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-rose-100 to-pink-100 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500" />
+                <div className="relative z-10">
+                  <div className="w-14 h-14 bg-gradient-to-br from-rose-500 to-pink-500 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                    <Heart size={28} className="fill-current" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Bức Thư Chiều Thứ 6</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Truy cập fanpage để đọc các bức thư
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-rose-600">
+                    <Star size={14} className="fill-current" />
+                    Yêu thương luôn
+                  </div>
+                </div>
+              </a>
+            </div>
+          </section>
+
+          {/* Daily Quote */}
+          {!quoteLoading && quote && (
+            <section className="mb-12">
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-8 border border-indigo-100">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-2xl">💭</span>
+                  </div>
+                  <div>
+                    <p className="text-lg text-gray-700 italic leading-relaxed mb-3">
+                      "{quote.content}"
+                    </p>
+                    {quote.author && (
+                      <p className="text-sm text-indigo-600 font-medium">— {quote.author}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Counselor-only Sections */}
           {isCounselor && (
-            <>
-              <div className="mb-8">
-                <CautionSection />
-              </div>
-              <div className="mb-8">
-                <PendingSection />
-              </div>
-              <CounselorTips />
-            </>
-          )}
-        </div>
+            <section className="space-y-8">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <BookOpen className="text-indigo-500" size={24} />
+                Công cụ tư vấn viên
+              </h2>
 
-        {/* Footer */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                  <CautionSection />
+                </div>
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                  <PendingSection />
+                </div>
+              </div>
+
+              {/* Counselor Tips */}
+              <div className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-2xl p-6 border border-teal-100">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-xl">📋</span>
+                  Lưu ý quan trọng
+                </h3>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-100">
+                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
+                      <span className="text-red-500 font-bold text-sm">!</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-red-700 text-sm">Khẩn cấp</span>
+                      <p className="text-xs text-red-600 mt-1">Dấu hiệu tự tử hoặc tự gây thương tích</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                    <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center shrink-0">
+                      <span className="text-amber-500 font-bold text-sm">?</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-amber-700 text-sm">Theo dõi</span>
+                      <p className="text-xs text-amber-600 mt-1">Biểu hiện tiêu cực nhẹ - cần quan sát</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-4 bg-teal-50 rounded-xl border border-teal-100">
+                    <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center shrink-0">
+                      <span className="text-teal-500 text-sm">🤖</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-teal-700 text-sm">AI hỗ trợ</span>
+                      <p className="text-xs text-teal-600 mt-1">Tự động phân tích và cảnh báo nội dung</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+        </main>
+
         <Footer />
       </div>
     </div>

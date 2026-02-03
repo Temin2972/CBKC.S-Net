@@ -45,39 +45,49 @@ export default function LoginForm({ onSuccess }) {
   )
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <Input
-        name="email"
-        type="text"
-        label={FORM_LABELS.EMAIL}
-        value={values.email}
-        onChange={handleChange}
-        placeholder="your@email.com"
-        error={errors.email}
-        autoComplete="email"
-        required
-      />
+    <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in-scale">
+      <div className="list-item-enter" style={{ animationDelay: '0.1s' }}>
+        <Input
+          name="email"
+          type="text"
+          label={FORM_LABELS.EMAIL}
+          value={values.email}
+          onChange={handleChange}
+          placeholder="your@email.com"
+          error={errors.email}
+          autoComplete="email"
+          required
+        />
+      </div>
 
-      <PasswordInput
-        name="password"
-        label={FORM_LABELS.PASSWORD}
-        value={values.password}
-        onChange={handleChange}
-        placeholder="Nhập mật khẩu"
-        error={errors.password}
-        autoComplete="current-password"
-        required
-      />
+      <div className="list-item-enter" style={{ animationDelay: '0.2s' }}>
+        <PasswordInput
+          name="password"
+          label={FORM_LABELS.PASSWORD}
+          value={values.password}
+          onChange={handleChange}
+          placeholder="Nhập mật khẩu"
+          error={errors.password}
+          autoComplete="current-password"
+          required
+        />
+      </div>
 
-      <Alert variant="error">{error}</Alert>
+      {error && (
+        <div className="animate-shake">
+          <Alert variant="error">{error}</Alert>
+        </div>
+      )}
 
-      <Button
-        type="submit"
-        size="xl"
-        loading={loading}
-        disabled={loading}
-      >
-        {loading ? AUTH_MESSAGES.LOGGING_IN : BUTTON_LABELS.LOGIN}
+      <div className="list-item-enter" style={{ animationDelay: '0.3s' }}>
+        <Button
+          type="submit"
+          size="xl"
+          loading={loading}
+          disabled={loading}
+          className="hover-pop w-full"
+        >
+          {loading ? AUTH_MESSAGES.LOGGING_IN : BUTTON_LABELS.LOGIN}
       </Button>
     </form>
   )

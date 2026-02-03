@@ -1,10 +1,107 @@
 -- =====================================================
--- SUPABASE SECURITY CONFIGURATION
+-- SUPABASE SECURITY CONFIGURATION v2.0
+-- Enhanced with helper functions and simplified policies
 -- Run these SQL commands in Supabase SQL Editor
 -- =====================================================
 
 -- =====================================================
+-- 0. HELPER FUNCTIONS FOR SIMPLIFIED POLICIES
+-- These functions cache role checks and simplify policy logic
+-- =====================================================
+
+-- Check if current user is a counselor
+CREATE OR REPLACE FUNCTION is_counselor()
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM users 
+        WHERE id = auth.uid() 
+        AND role IN ('counselor', 'admin')
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+-- Check if current user is admin
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM users 
+        WHERE id = auth.uid() 
+        AND role = 'admin'
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+-- Get current user's role (cached lookup)
+CREATE OR REPLACE FUNCTION get_my_role()
+RETURNS TEXT AS $$
+DECLARE
+    user_role TEXT;
+BEGIN
+    SELECT role INTO user_role FROM users WHERE id = auth.uid();
+    RETURN COALESCE(user_role, 'student');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+-- Check if user can access a specific chat room
+CREATE OR REPLACE FUNCTION can_access_chat_room(room_id UUID)
+RETURNS BOOLEAN AS $$
+DECLARE
+    user_role TEXT;
+    room_student_id UUID;
+    room_counselor_id UUID;
+BEGIN
+    -- Get current user's role
+    SELECT role INTO user_role FROM users WHERE id = auth.uid();
+    
+    -- Admin has full access to all rooms
+    IF user_role = 'admin' THEN 
+        RETURN TRUE; 
+    END IF;
+    
+    -- Get room info
+    SELECT student_id, counselor_id 
+    INTO room_student_id, room_counselor_id 
+    FROM chat_rooms WHERE id = room_id;
+    
+    -- Room doesn't exist
+    IF room_student_id IS NULL THEN
+        RETURN FALSE;
+    END IF;
+    
+    -- Student can access their own room
+    IF room_student_id = auth.uid() THEN 
+        RETURN TRUE; 
+    END IF;
+    
+    -- Counselor access rules
+    IF user_role = 'counselor' THEN
+        -- Can access public rooms (counselor_id IS NULL)
+        IF room_counselor_id IS NULL THEN
+            RETURN TRUE;
+        END IF;
+        -- Can access private rooms assigned to them
+        IF room_counselor_id = auth.uid() THEN
+            RETURN TRUE;
+        END IF;
+    END IF;
+    
+    RETURN FALSE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+-- Check if user is the owner of a resource
+CREATE OR REPLACE FUNCTION is_owner(resource_user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN resource_user_id = auth.uid();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+-- =====================================================
 -- 1. ROW LEVEL SECURITY (RLS) POLICIES
+-- Simplified using helper functions
 -- =====================================================
 
 -- Enable RLS on all tables
@@ -23,331 +120,256 @@ ALTER TABLE feedbacks ENABLE ROW LEVEL SECURITY;
 -- USERS TABLE POLICIES
 -- =====================================================
 
+-- Drop existing policies if they exist (for clean migration)
+DROP POLICY IF EXISTS "Users can view own profile" ON users;
+DROP POLICY IF EXISTS "Counselors can view all users" ON users;
+DROP POLICY IF EXISTS "Users can update own profile" ON users;
+
 -- Users can read their own profile
-CREATE POLICY "Users can view own profile" ON users
-    FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "users_select_own" ON users
+    FOR SELECT USING (is_owner(id));
 
 -- Counselors and admins can view all users
-CREATE POLICY "Counselors can view all users" ON users
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() 
-            AND role IN ('counselor', 'admin')
-        )
-    );
+CREATE POLICY "users_select_by_staff" ON users
+    FOR SELECT USING (is_counselor());
 
--- Users can update their own profile
-CREATE POLICY "Users can update own profile" ON users
-    FOR UPDATE USING (auth.uid() = id)
+-- Users can update their own profile (but not role)
+CREATE POLICY "users_update_own" ON users
+    FOR UPDATE USING (is_owner(id))
     WITH CHECK (
-        auth.uid() = id 
-        AND role = (SELECT role FROM users WHERE id = auth.uid()) -- Can't change own role
+        is_owner(id) 
+        AND role = (SELECT role FROM users WHERE id = auth.uid())
     );
 
 -- =====================================================
 -- POSTS TABLE POLICIES
 -- =====================================================
 
--- Anyone authenticated can view approved posts
-CREATE POLICY "Authenticated users can view approved posts" ON posts
-    FOR SELECT USING (
-        auth.uid() IS NOT NULL 
-        AND status = 'approved'
-    );
+DROP POLICY IF EXISTS "Authenticated users can view approved posts" ON posts;
+DROP POLICY IF EXISTS "Users can create posts" ON posts;
+DROP POLICY IF EXISTS "Users can delete own posts" ON posts;
+DROP POLICY IF EXISTS "Counselors can moderate posts" ON posts;
 
--- Users can create posts (will be moderated)
-CREATE POLICY "Users can create posts" ON posts
-    FOR INSERT WITH CHECK (auth.uid() = author_id);
+-- Anyone authenticated can view approved posts
+CREATE POLICY "posts_select_approved" ON posts
+    FOR SELECT USING (auth.uid() IS NOT NULL AND status = 'approved');
+
+-- Users can create posts
+CREATE POLICY "posts_insert_own" ON posts
+    FOR INSERT WITH CHECK (is_owner(author_id));
 
 -- Users can delete their own posts
-CREATE POLICY "Users can delete own posts" ON posts
-    FOR DELETE USING (auth.uid() = author_id);
+CREATE POLICY "posts_delete_own" ON posts
+    FOR DELETE USING (is_owner(author_id));
 
--- Counselors/admins can moderate posts
-CREATE POLICY "Counselors can moderate posts" ON posts
-    FOR UPDATE USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() 
-            AND role IN ('counselor', 'admin')
-        )
-    );
+-- Staff can moderate any post
+CREATE POLICY "posts_update_by_staff" ON posts
+    FOR UPDATE USING (is_counselor());
 
 -- =====================================================
 -- COMMENTS TABLE POLICIES
 -- =====================================================
 
--- Authenticated users can view comments on approved posts
-CREATE POLICY "Users can view comments" ON comments
+DROP POLICY IF EXISTS "Users can view comments" ON comments;
+DROP POLICY IF EXISTS "Users can create comments" ON comments;
+DROP POLICY IF EXISTS "Users can delete own comments" ON comments;
+DROP POLICY IF EXISTS "Counselors can delete comments" ON comments;
+
+-- Authenticated users can view comments
+CREATE POLICY "comments_select" ON comments
     FOR SELECT USING (auth.uid() IS NOT NULL);
 
 -- Users can create comments
-CREATE POLICY "Users can create comments" ON comments
-    FOR INSERT WITH CHECK (auth.uid() = author_id);
+CREATE POLICY "comments_insert_own" ON comments
+    FOR INSERT WITH CHECK (is_owner(author_id));
 
 -- Users can delete their own comments
-CREATE POLICY "Users can delete own comments" ON comments
-    FOR DELETE USING (auth.uid() = author_id);
+CREATE POLICY "comments_delete_own" ON comments
+    FOR DELETE USING (is_owner(author_id));
 
--- Counselors can delete any comment
-CREATE POLICY "Counselors can delete comments" ON comments
-    FOR DELETE USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() 
-            AND role IN ('counselor', 'admin')
-        )
-    );
+-- Staff can delete any comment
+CREATE POLICY "comments_delete_by_staff" ON comments
+    FOR DELETE USING (is_counselor());
 
 -- =====================================================
--- CHAT ROOMS TABLE POLICIES
+-- CHAT ROOMS TABLE POLICIES (Simplified!)
 -- =====================================================
 
--- Students can view their own chat rooms
-CREATE POLICY "Students can view own chat rooms" ON chat_rooms
-    FOR SELECT USING (
-        auth.uid() = student_id
-        OR (
-            -- Counselors can see public rooms or their private rooms
-            EXISTS (
-                SELECT 1 FROM users 
-                WHERE id = auth.uid() 
-                AND role IN ('counselor', 'admin')
-            )
-            AND (counselor_id IS NULL OR counselor_id = auth.uid())
-        )
-        OR (
-            -- Admins can see all rooms
-            EXISTS (
-                SELECT 1 FROM users 
-                WHERE id = auth.uid() 
-                AND role = 'admin'
-            )
-        )
-    );
+DROP POLICY IF EXISTS "Students can view own chat rooms" ON chat_rooms;
+DROP POLICY IF EXISTS "Students can create chat rooms" ON chat_rooms;
+DROP POLICY IF EXISTS "Students can delete own chat rooms" ON chat_rooms;
+
+-- Select using helper function
+CREATE POLICY "chat_rooms_select" ON chat_rooms
+    FOR SELECT USING (can_access_chat_room(id));
 
 -- Students can create chat rooms
-CREATE POLICY "Students can create chat rooms" ON chat_rooms
+CREATE POLICY "chat_rooms_insert" ON chat_rooms
     FOR INSERT WITH CHECK (
-        auth.uid() = student_id
-        AND EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() 
-            AND role = 'student'
-        )
+        is_owner(student_id) 
+        AND get_my_role() = 'student'
     );
 
 -- Students can delete their own chat rooms
-CREATE POLICY "Students can delete own chat rooms" ON chat_rooms
-    FOR DELETE USING (auth.uid() = student_id);
+CREATE POLICY "chat_rooms_delete" ON chat_rooms
+    FOR DELETE USING (is_owner(student_id));
+
+-- Staff can update chat rooms (for transfer, urgency level, etc.)
+CREATE POLICY "chat_rooms_update_by_staff" ON chat_rooms
+    FOR UPDATE USING (is_counselor());
 
 -- =====================================================
--- CHAT MESSAGES TABLE POLICIES
+-- CHAT MESSAGES TABLE POLICIES (Simplified!)
 -- =====================================================
 
--- Users can view messages in rooms they have access to
-CREATE POLICY "Users can view messages in accessible rooms" ON chat_messages
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM chat_rooms 
-            WHERE id = chat_messages.chat_room_id
-            AND (
-                student_id = auth.uid()
-                OR (
-                    EXISTS (
-                        SELECT 1 FROM users 
-                        WHERE id = auth.uid() 
-                        AND role IN ('counselor', 'admin')
-                    )
-                    AND (counselor_id IS NULL OR counselor_id = auth.uid())
-                )
-                OR (
-                    EXISTS (
-                        SELECT 1 FROM users 
-                        WHERE id = auth.uid() 
-                        AND role = 'admin'
-                    )
-                )
-            )
-        )
-    );
+DROP POLICY IF EXISTS "Users can view messages in accessible rooms" ON chat_messages;
+DROP POLICY IF EXISTS "Users can send messages" ON chat_messages;
 
--- Users can send messages to rooms they have access to
-CREATE POLICY "Users can send messages" ON chat_messages
+-- View messages in accessible rooms
+CREATE POLICY "chat_messages_select" ON chat_messages
+    FOR SELECT USING (can_access_chat_room(chat_room_id));
+
+-- Send messages to accessible rooms
+CREATE POLICY "chat_messages_insert" ON chat_messages
     FOR INSERT WITH CHECK (
-        auth.uid() = sender_id
-        AND EXISTS (
-            SELECT 1 FROM chat_rooms 
-            WHERE id = chat_messages.chat_room_id
-            AND (
-                student_id = auth.uid()
-                OR (
-                    EXISTS (
-                        SELECT 1 FROM users 
-                        WHERE id = auth.uid() 
-                        AND role IN ('counselor', 'admin')
-                    )
-                    AND (counselor_id IS NULL OR counselor_id = auth.uid())
-                )
-            )
-        )
+        is_owner(sender_id) 
+        AND can_access_chat_room(chat_room_id)
     );
+
+-- Users can delete their own messages
+CREATE POLICY "chat_messages_delete_own" ON chat_messages
+    FOR DELETE USING (is_owner(sender_id));
+
+-- Staff can delete any message (moderation)
+CREATE POLICY "chat_messages_delete_by_staff" ON chat_messages
+    FOR DELETE USING (is_counselor());
 
 -- =====================================================
 -- NOTIFICATIONS TABLE POLICIES
 -- =====================================================
 
+DROP POLICY IF EXISTS "Users can view own notifications" ON notifications;
+DROP POLICY IF EXISTS "Users can update own notifications" ON notifications;
+DROP POLICY IF EXISTS "Create notifications" ON notifications;
+
 -- Users can only view their own notifications
-CREATE POLICY "Users can view own notifications" ON notifications
-    FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "notifications_select_own" ON notifications
+    FOR SELECT USING (is_owner(user_id));
 
 -- Users can update their own notifications (mark as read)
-CREATE POLICY "Users can update own notifications" ON notifications
-    FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "notifications_update_own" ON notifications
+    FOR UPDATE USING (is_owner(user_id));
 
--- System/counselors can create notifications
-CREATE POLICY "Create notifications" ON notifications
+-- Any authenticated user can create notifications
+CREATE POLICY "notifications_insert" ON notifications
     FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Users can delete their own notifications
+CREATE POLICY "notifications_delete_own" ON notifications
+    FOR DELETE USING (is_owner(user_id));
 
 -- =====================================================
 -- FLAGGED CONTENT TABLE POLICIES
 -- =====================================================
 
--- Only counselors/admins can view flagged content
-CREATE POLICY "Counselors can view flagged content" ON flagged_content
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() 
-            AND role IN ('counselor', 'admin')
-        )
-    );
+DROP POLICY IF EXISTS "Counselors can view flagged content" ON flagged_content;
+DROP POLICY IF EXISTS "System can flag content" ON flagged_content;
+DROP POLICY IF EXISTS "Counselors can resolve flagged content" ON flagged_content;
 
--- System can create flagged content entries
-CREATE POLICY "System can flag content" ON flagged_content
+-- Only staff can view flagged content
+CREATE POLICY "flagged_content_select" ON flagged_content
+    FOR SELECT USING (is_counselor());
+
+-- Any authenticated user can create flagged content (system/auto)
+CREATE POLICY "flagged_content_insert" ON flagged_content
     FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
--- Counselors can update flagged content (resolve)
-CREATE POLICY "Counselors can resolve flagged content" ON flagged_content
-    FOR UPDATE USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() 
-            AND role IN ('counselor', 'admin')
-        )
-    );
+-- Staff can update/resolve flagged content
+CREATE POLICY "flagged_content_update" ON flagged_content
+    FOR UPDATE USING (is_counselor());
 
 -- =====================================================
 -- PENDING CONTENT TABLE POLICIES
 -- =====================================================
 
--- Only counselors/admins can view pending content
-CREATE POLICY "Counselors can view pending content" ON pending_content
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() 
-            AND role IN ('counselor', 'admin')
-        )
-    );
+DROP POLICY IF EXISTS "Counselors can view pending content" ON pending_content;
+DROP POLICY IF EXISTS "Users can create pending content" ON pending_content;
+DROP POLICY IF EXISTS "Counselors can moderate pending content" ON pending_content;
 
--- Authenticated users can create pending content
-CREATE POLICY "Users can create pending content" ON pending_content
-    FOR INSERT WITH CHECK (auth.uid() = author_id);
+-- Staff can view all pending content
+CREATE POLICY "pending_content_select_by_staff" ON pending_content
+    FOR SELECT USING (is_counselor());
 
--- Counselors can approve/reject pending content
-CREATE POLICY "Counselors can moderate pending content" ON pending_content
-    FOR UPDATE USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() 
-            AND role IN ('counselor', 'admin')
-        )
-    );
+-- Users can also view their OWN pending content
+CREATE POLICY "pending_content_select_own" ON pending_content
+    FOR SELECT USING (is_owner(author_id));
+
+-- Users can create pending content
+CREATE POLICY "pending_content_insert" ON pending_content
+    FOR INSERT WITH CHECK (is_owner(author_id));
+
+-- Users can DELETE their own pending content (before approved)
+CREATE POLICY "pending_content_delete_own" ON pending_content
+    FOR DELETE USING (is_owner(author_id) AND status = 'pending');
+
+-- Staff can moderate (update status)
+CREATE POLICY "pending_content_update_by_staff" ON pending_content
+    FOR UPDATE USING (is_counselor());
 
 -- =====================================================
 -- SURVEYS TABLE POLICIES
 -- =====================================================
 
--- Users can view their own survey responses
-CREATE POLICY "Users can view own surveys" ON surveys
-    FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can view own surveys" ON surveys;
+DROP POLICY IF EXISTS "Counselors can view surveys" ON surveys;
+DROP POLICY IF EXISTS "Users can create surveys" ON surveys;
 
--- Counselors can view all surveys (anonymized)
-CREATE POLICY "Counselors can view surveys" ON surveys
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() 
-            AND role IN ('counselor', 'admin')
-        )
-    );
+-- Users can view their own survey responses
+CREATE POLICY "surveys_select_own" ON surveys
+    FOR SELECT USING (is_owner(user_id));
+
+-- Staff can view all surveys
+CREATE POLICY "surveys_select_by_staff" ON surveys
+    FOR SELECT USING (is_counselor());
 
 -- Users can create survey responses
-CREATE POLICY "Users can create surveys" ON surveys
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "surveys_insert" ON surveys
+    FOR INSERT WITH CHECK (is_owner(user_id));
 
 -- =====================================================
 -- FEEDBACKS TABLE POLICIES
 -- =====================================================
 
--- Users can view their own feedback
-CREATE POLICY "Users can view own feedback" ON feedbacks
-    FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can view own feedback" ON feedbacks;
+DROP POLICY IF EXISTS "Admins can view all feedback" ON feedbacks;
+DROP POLICY IF EXISTS "Users can create feedback" ON feedbacks;
 
--- Admins can view all feedback
-CREATE POLICY "Admins can view all feedback" ON feedbacks
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() 
-            AND role = 'admin'
-        )
-    );
+-- Users can view their own feedback
+CREATE POLICY "feedbacks_select_own" ON feedbacks
+    FOR SELECT USING (is_owner(user_id));
+
+-- Staff can view all feedback
+CREATE POLICY "feedbacks_select_by_staff" ON feedbacks
+    FOR SELECT USING (is_counselor());
 
 -- Users can create feedback
-CREATE POLICY "Users can create feedback" ON feedbacks
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "feedbacks_insert" ON feedbacks
+    FOR INSERT WITH CHECK (is_owner(user_id));
 
 -- =====================================================
--- 2. DATABASE FUNCTIONS WITH SECURITY
+-- 2. ADDITIONAL HELPER FUNCTIONS
 -- =====================================================
 
--- Function to check if user is counselor
-CREATE OR REPLACE FUNCTION is_counselor()
-RETURNS BOOLEAN AS $$
-BEGIN
-    RETURN EXISTS (
-        SELECT 1 FROM users 
-        WHERE id = auth.uid() 
-        AND role IN ('counselor', 'admin')
-    );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Function to check if user is admin
-CREATE OR REPLACE FUNCTION is_admin()
-RETURNS BOOLEAN AS $$
-BEGIN
-    RETURN EXISTS (
-        SELECT 1 FROM users 
-        WHERE id = auth.uid() 
-        AND role = 'admin'
-    );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Secure function to get user role
-CREATE OR REPLACE FUNCTION get_user_role(user_id UUID)
+-- Get user role by ID (for other queries)
+CREATE OR REPLACE FUNCTION get_user_role(target_user_id UUID)
 RETURNS TEXT AS $$
 DECLARE
     user_role TEXT;
 BEGIN
-    SELECT role INTO user_role FROM users WHERE id = user_id;
+    SELECT role INTO user_role FROM users WHERE id = target_user_id;
     RETURN user_role;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
 -- =====================================================
 -- 3. TRIGGERS FOR DATA INTEGRITY
@@ -365,21 +387,30 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Apply to all relevant tables
-CREATE TRIGGER set_timestamps_users
-    BEFORE INSERT OR UPDATE ON users
-    FOR EACH ROW EXECUTE FUNCTION set_timestamps();
-
-CREATE TRIGGER set_timestamps_posts
-    BEFORE INSERT OR UPDATE ON posts
-    FOR EACH ROW EXECUTE FUNCTION set_timestamps();
-
-CREATE TRIGGER set_timestamps_chat_messages
-    BEFORE INSERT OR UPDATE ON chat_messages
-    FOR EACH ROW EXECUTE FUNCTION set_timestamps();
+-- Apply to all relevant tables (only if trigger doesn't exist)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamps_users') THEN
+        CREATE TRIGGER set_timestamps_users
+            BEFORE INSERT OR UPDATE ON users
+            FOR EACH ROW EXECUTE FUNCTION set_timestamps();
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamps_posts') THEN
+        CREATE TRIGGER set_timestamps_posts
+            BEFORE INSERT OR UPDATE ON posts
+            FOR EACH ROW EXECUTE FUNCTION set_timestamps();
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamps_chat_messages') THEN
+        CREATE TRIGGER set_timestamps_chat_messages
+            BEFORE INSERT OR UPDATE ON chat_messages
+            FOR EACH ROW EXECUTE FUNCTION set_timestamps();
+    END IF;
+END $$;
 
 -- =====================================================
--- 4. RATE LIMITING FUNCTION
+-- 4. RATE LIMITING
 -- =====================================================
 
 -- Rate limiting table
@@ -391,6 +422,13 @@ CREATE TABLE IF NOT EXISTS rate_limits (
     window_start TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, action)
 );
+
+-- Enable RLS on rate_limits
+ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY;
+
+-- Users can manage their own rate limits
+CREATE POLICY "rate_limits_own" ON rate_limits
+    FOR ALL USING (is_owner(user_id));
 
 -- Function to check rate limit
 CREATE OR REPLACE FUNCTION check_rate_limit(
@@ -404,7 +442,6 @@ DECLARE
     v_count INTEGER;
     v_window_start TIMESTAMPTZ;
 BEGIN
-    -- Get current rate limit record
     SELECT count, window_start INTO v_count, v_window_start
     FROM rate_limits
     WHERE user_id = p_user_id AND action = p_action;
@@ -453,7 +490,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Only admins can view audit logs
-CREATE POLICY "Admins can view audit logs" ON audit_logs
+CREATE POLICY "audit_logs_admin_only" ON audit_logs
     FOR SELECT USING (is_admin());
 
 -- Function to log audit events
@@ -475,40 +512,38 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- 6. SECURITY INDEXES
 -- =====================================================
 
--- Indexes for faster security checks
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_chat_rooms_student ON chat_rooms(student_id);
 CREATE INDEX IF NOT EXISTS idx_chat_rooms_counselor ON chat_rooms(counselor_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_room ON chat_messages(chat_room_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
-CREATE INDEX IF NOT EXISTS idx_flagged_content_status ON flagged_content(status);
+CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id) WHERE is_read = FALSE;
+CREATE INDEX IF NOT EXISTS idx_flagged_content_status ON flagged_content(is_resolved);
 CREATE INDEX IF NOT EXISTS idx_pending_content_status ON pending_content(status);
 CREATE INDEX IF NOT EXISTS idx_rate_limits_user_action ON rate_limits(user_id, action);
 
 -- =====================================================
--- 7. CLEANUP POLICIES
+-- 7. CLEANUP FUNCTIONS
 -- =====================================================
 
--- Function to cleanup old data
 CREATE OR REPLACE FUNCTION cleanup_old_data()
 RETURNS VOID AS $$
 BEGIN
     -- Delete old rate limit records (older than 1 hour)
     DELETE FROM rate_limits WHERE window_start < NOW() - INTERVAL '1 hour';
     
-    -- Delete old audit logs (older than 90 days) - adjust as needed
+    -- Delete old audit logs (older than 90 days)
     DELETE FROM audit_logs WHERE created_at < NOW() - INTERVAL '90 days';
     
     -- Delete old read notifications (older than 30 days)
-    DELETE FROM notifications WHERE read = TRUE AND created_at < NOW() - INTERVAL '30 days';
+    DELETE FROM notifications WHERE is_read = TRUE AND created_at < NOW() - INTERVAL '30 days';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- =====================================================
--- 8. INPUT VALIDATION FUNCTIONS
+-- 8. INPUT VALIDATION
 -- =====================================================
 
--- Function to validate content length
 CREATE OR REPLACE FUNCTION validate_content_length(
     p_content TEXT,
     p_max_length INTEGER DEFAULT 10000
@@ -530,47 +565,38 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER validate_post_content
-    BEFORE INSERT OR UPDATE ON posts
-    FOR EACH ROW EXECUTE FUNCTION validate_post();
+-- Create trigger if not exists
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'validate_post_content') THEN
+        CREATE TRIGGER validate_post_content
+            BEFORE INSERT OR UPDATE ON posts
+            FOR EACH ROW EXECUTE FUNCTION validate_post();
+    END IF;
+END $$;
 
 -- =====================================================
 -- NOTES FOR PRODUCTION DEPLOYMENT
 -- =====================================================
 
 /*
-1. ENABLE SSL/TLS:
-   - Ensure all connections use SSL
-   - Configure in Supabase dashboard: Settings > Database > SSL
+CHANGELOG v2.0:
+- Added helper functions (is_owner, is_counselor, is_admin, can_access_chat_room)
+- Simplified all policies using helper functions
+- Added missing DELETE policy for pending_content (users can delete own pending)
+- Added policy for users to view their own pending content
+- Fixed potential infinite recursion issues
+- Added STABLE marker to functions for better caching
+- Used consistent naming convention: table_operation_scope
 
-2. CONFIGURE AUTHENTICATION:
-   - Enable email confirmation
-   - Set password requirements
-   - Configure in Supabase dashboard: Authentication > Policies
+DEPLOYMENT CHECKLIST:
+1. [ ] Backup current database
+2. [ ] Run this script in Supabase SQL Editor
+3. [ ] Test each role (student, counselor, admin)
+4. [ ] Monitor for policy errors in logs
 
-3. API RATE LIMITING:
-   - Configure in Supabase dashboard: Settings > API > Rate Limiting
-   - Recommended: 100 requests per minute for authenticated users
-
-4. DATABASE BACKUPS:
-   - Enable Point-in-Time Recovery
-   - Configure in Supabase dashboard: Settings > Database > Backups
-
-5. MONITORING:
-   - Enable logging in Supabase dashboard
-   - Set up alerts for failed authentication attempts
-   
-6. ENVIRONMENT VARIABLES:
-   - Never commit API keys to git
-   - Use .env files for local development
-   - Use Vercel/Netlify environment variables for production
-
-7. CORS CONFIGURATION:
-   - Configure allowed origins in Supabase dashboard
-   - Only allow your production domain
-
-8. JWT EXPIRY:
-   - Configure token expiry in Supabase dashboard
-   - Recommended: 1 hour for access tokens
-
+PERFORMANCE NOTES:
+- Helper functions marked as STABLE for query planner optimization
+- Added partial index for unread notifications
+- Functions use SECURITY DEFINER for consistent permissions
 */
