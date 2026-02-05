@@ -74,11 +74,15 @@ export async function generateAIResponse(conversationHistory, studentMessage) {
     const apiKey = GEMINI_API_KEY()
 
     if (!apiKey) {
+        console.error('❌ VITE_GEMINI_API_KEY is not set!')
         return {
             response: 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Tư vấn viên sẽ sớm liên hệ với bạn! ❤️',
             assessment: null
         }
     }
+
+    console.log('🔑 Gemini API Key found (length:', apiKey.length, ')')
+    console.log('💬 Conversation history length:', conversationHistory.length)
 
     const conversationText = conversationHistory
         .map(msg => `${msg.isAI ? 'Tâm An' : 'Học sinh'}: ${msg.content}`)
@@ -138,11 +142,18 @@ Chỉ trả về JSON, không thêm text khác.`
         )
 
         if (!response.ok) {
-            throw new Error(`API error: ${response.status}`)
+            const errorText = await response.text()
+            console.error('❌ Gemini API error:', response.status, errorText)
+            throw new Error(`API error: ${response.status} - ${errorText}`)
         }
 
         const data = await response.json()
+        console.log('✅ Gemini API response received')
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+
+        if (!text) {
+            console.warn('⚠️ Empty response from Gemini API')
+        }
 
         const jsonMatch = text.match(/\{[\s\S]*\}/)
         if (jsonMatch) {
@@ -164,7 +175,7 @@ Chỉ trả về JSON, không thêm text khác.`
             assessment: null
         }
     } catch (error) {
-        console.error('AI response error:', error)
+        console.error('❌ AI response error:', error)
         return {
             response: 'Mình đang lắng nghe bạn. Tư vấn viên sẽ sớm liên hệ để hỗ trợ bạn tốt hơn nhé! ❤️',
             assessment: null

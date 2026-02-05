@@ -40,10 +40,14 @@ export default function ChatInterface({ chatRoom, currentUser }) {
 
   // Send AI message to chat
   const sendAIMessage = useCallback(async (content, isIntro = false) => {
-    if (!chatRoom?.id) return
+    if (!chatRoom?.id) {
+      console.error('Cannot send AI message: No chat room ID')
+      return false
+    }
 
     try {
-      await supabase.from('chat_messages').insert({
+      console.log('🤖 Sending AI message to room:', chatRoom.id)
+      const { data, error } = await supabase.from('chat_messages').insert({
         chat_room_id: chatRoom.id,
         sender_id: null, // NULL indicates system/AI message
         content: content,
@@ -54,16 +58,29 @@ export default function ChatInterface({ chatRoom, currentUser }) {
           is_ai: true,
           is_intro: isIntro
         }
-      })
+      }).select()
+
+      if (error) {
+        console.error('❌ Error inserting AI message:', error)
+        return false
+      }
+      
+      console.log('✅ AI message sent successfully:', data)
+      return true
     } catch (error) {
-      console.error('Error sending AI message:', error)
+      console.error('❌ Exception sending AI message:', error)
+      return false
     }
   }, [chatRoom?.id])
 
   // Process student message with AI
   const processWithAI = useCallback(async (studentMessage) => {
-    if (counselorHasReplied()) return
+    if (counselorHasReplied()) {
+      console.log('🛑 Counselor has replied, skipping AI response')
+      return
+    }
 
+    console.log('🤖 Processing student message with AI:', studentMessage.substring(0, 50) + '...')
     setAiProcessing(true)
 
     try {
@@ -74,34 +91,43 @@ export default function ChatInterface({ chatRoom, currentUser }) {
       })
 
       // Generate AI response
+      console.log('🔄 Calling generateAIResponse...')
       const { response, assessment } = await generateAIResponse(
         conversationHistoryRef.current,
         studentMessage
       )
+      console.log('📝 AI response received:', response ? response.substring(0, 50) + '...' : 'null')
 
       if (response && !counselorHasReplied()) {
-        await sendAIMessage(response)
+        const sent = await sendAIMessage(response)
+        
+        if (sent) {
+          // Add AI response to history
+          conversationHistoryRef.current.push({
+            content: response,
+            isAI: true
+          })
 
-        // Add AI response to history
-        conversationHistoryRef.current.push({
-          content: response,
-          isAI: true
-        })
-
-        // Update chat room with assessment if available
-        if (assessment) {
-          await supabase
-            .from('chat_rooms')
-            .update({
-              urgency_level: assessment.urgencyLevel,
-              ai_assessment: assessment,
-              ai_triage_complete: true
-            })
-            .eq('id', chatRoom.id)
+          // Update chat room with assessment if available
+          if (assessment) {
+            console.log('📊 Updating chat room with assessment:', assessment)
+            const { error: updateError } = await supabase
+              .from('chat_rooms')
+              .update({
+                urgency_level: assessment.urgencyLevel,
+                ai_assessment: assessment,
+                ai_triage_complete: true
+              })
+              .eq('id', chatRoom.id)
+            
+            if (updateError) {
+              console.error('❌ Error updating chat room assessment:', updateError)
+            }
+          }
         }
       }
     } catch (error) {
-      console.error('AI processing error:', error)
+      console.error('❌ AI processing error:', error)
     }
 
     setAiProcessing(false)
