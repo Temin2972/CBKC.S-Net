@@ -101,7 +101,7 @@ npm run preview  # Preview production build
 ## AI Triage System
 
 The "Tâm An" AI assistant in `src/components/Chat/ChatInterface.jsx` has specific behavior:
-- **60-second delay**: AI only introduces itself after `AI_RESPONSE_DELAY` (60 seconds) following the student's first message
+- **Immediate greeting**: AI introduces itself immediately when a student sends their first message
 - **Stops when counselor replies**: Once a counselor sends a message, AI stops responding
 - **Requires API key**: If `VITE_GEMINI_API_KEY` is not set, AI returns a fallback "technical issue" message
 

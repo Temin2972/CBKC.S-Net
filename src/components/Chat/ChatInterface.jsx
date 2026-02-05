@@ -5,8 +5,8 @@ import { Send, Trash2, Bot, Sparkles } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { generateAIResponse, shouldAIRespond } from '../../lib/aiTriage'
 
-// AI Response delay in milliseconds (1 minute = 60000ms)
-const AI_RESPONSE_DELAY = 60000
+// AI Response delay in milliseconds (0 = immediate greeting)
+const AI_RESPONSE_DELAY = 0
 
 // AI Introduction message
 const AI_INTRO_MESSAGE = `Chào em! 👋 Hiện tại các thầy cô đang bận, nhưng mình là Tâm An - trợ lý tâm lý của S-Net để giúp em trong quá trình chờ thầy cô nha! 
