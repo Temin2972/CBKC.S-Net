@@ -8,8 +8,8 @@ import { generateAIResponse, shouldAIRespond } from '../../lib/aiTriage'
 // AI Response delay in milliseconds (0 = immediate greeting)
 const AI_RESPONSE_DELAY = 0
 
-// AI Introduction message
-const AI_INTRO_MESSAGE = `Chào em! 👋 Hiện tại các thầy cô đang bận, nhưng mình là Tâm An - trợ lý tâm lý của S-Net để giúp em trong quá trình chờ thầy cô nha! 
+// AI Introduction message (with marker prefix)
+const AI_INTRO_MESSAGE = `🤖 **Tâm An:** Chào em! 👋 Hiện tại các thầy cô đang bận, nhưng mình là Tâm An - trợ lý tâm lý của S-Net để giúp em trong quá trình chờ thầy cô nha! 
 
 Mình sẵn sàng lắng nghe em chia sẻ. Em có thể kể cho mình nghe em đang cảm thấy như thế nào không? 💭`
 
@@ -47,17 +47,14 @@ export default function ChatInterface({ chatRoom, currentUser }) {
 
     try {
       console.log('🤖 Sending AI message to room:', chatRoom.id)
+      // For intro message, content already has marker. For responses, add marker.
+      const aiContent = isIntro ? content : `🤖 **Tâm An:** ${content}`
+      
       const { data, error } = await supabase.from('chat_messages').insert({
         chat_room_id: chatRoom.id,
         sender_id: null, // NULL indicates system/AI message
-        content: content,
-        is_system: true,
-        metadata: {
-          type: 'ai_triage',
-          sender_name: 'Tâm An',
-          is_ai: true,
-          is_intro: isIntro
-        }
+        content: aiContent,
+        is_system: true
       }).select()
 
       if (error) {
@@ -273,8 +270,8 @@ export default function ChatInterface({ chatRoom, currentUser }) {
   }
 
   const getSenderDisplayName = (message) => {
-    // Check if this is an AI message
-    if (message.is_system && message.metadata?.is_ai) {
+    // Check if this is an AI message (system message with null sender)
+    if (message.is_system && message.sender_id === null) {
       return '🤖 Tâm An (Trợ lý AI)'
     }
 
@@ -297,7 +294,12 @@ export default function ChatInterface({ chatRoom, currentUser }) {
   }
 
   const isAIMessage = (message) => {
-    return message.is_system && message.metadata?.is_ai
+    // AI messages are system messages with null sender_id and contain the AI marker
+    return message.is_system && (
+      message.sender_id === null || 
+      message.content?.includes('🤖') ||
+      message.content?.includes('Tâm An')
+    )
   }
 
   const isMessageRead = (message) => {

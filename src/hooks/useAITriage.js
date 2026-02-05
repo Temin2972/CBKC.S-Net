@@ -23,16 +23,14 @@ export function useAITriage(chatRoomId, chatRoom) {
      */
     const sendAIMessage = useCallback(async (content, assessmentData = null) => {
         try {
+            // Format AI message with marker (metadata column doesn't exist in DB)
+            const aiContent = `🤖 **Tâm An:** ${content}`
+            
             const messageData = {
                 chat_room_id: chatRoomId,
                 sender_id: null, // NULL indicates system/AI message
-                content: content,
-                is_system: true,
-                metadata: {
-                    type: 'ai_triage',
-                    sender_name: 'Tâm An',
-                    assessment: assessmentData
-                }
+                content: aiContent,
+                is_system: true
             }
 
             await supabase.from('chat_messages').insert(messageData)
@@ -151,7 +149,11 @@ export function useAITriage(chatRoomId, chatRoom) {
      * Check if a message is from AI
      */
     const isAIMessage = (message) => {
-        return message.is_system && message.metadata?.type === 'ai_triage'
+        return message.is_system && (
+            message.sender_id === null ||
+            message.content?.includes('🤖') ||
+            message.content?.includes('Tâm An')
+        )
     }
 
     /**

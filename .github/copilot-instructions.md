@@ -70,9 +70,11 @@ if (role === USER_ROLES.STUDENT) { /* student-only logic */ }
 Migrations in `supabase/migrations/`. Key tables:
 - `users` - Profiles with `role` column
 - `chat_rooms` - Has `urgency_level`, `is_counseled`, `ai_triage_complete` fields
-- `chat_messages` - With `sender_id` foreign key to users
+- `chat_messages` - With `sender_id` foreign key to users, `is_system` for AI/system messages
 - `posts`, `comments` - Community content with moderation fields
 - `student_notes` - Counselor notes per student (RLS: staff-only)
+
+**Note:** `chat_messages` does NOT have a `metadata` column. AI messages are identified by `is_system=true` and `sender_id=null`, with `🤖 **Tâm An:**` prefix in content.
 
 ## Security Patterns
 
