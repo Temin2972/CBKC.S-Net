@@ -6,7 +6,8 @@ import { useBroadcastOnline } from '../hooks/useOnlineStatus'
 import Navbar from '../components/Layout/Navbar'
 import ChatInterface from '../components/Chat/ChatInterface'
 import UrgencyBadge from '../components/Chat/UrgencyBadge'
-import { MessageCircle, Users, Clock, EyeOff, Eye, Shield, AlertTriangle } from 'lucide-react'
+import StudentNotesPanel from '../components/Chat/StudentNotesPanel'
+import { MessageCircle, Users, Clock, EyeOff, Eye, Shield, AlertTriangle, StickyNote } from 'lucide-react'
 
 // Background image - Psychology room
 const CHAT_BG = 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=1920&q=80'
@@ -16,6 +17,7 @@ export default function CounselorChat() {
   const { roomId } = useParams() // Get roomId from URL if present
   const { allChatRooms, loading } = useChatRoom(user?.id, user?.user_metadata?.role)
   const [selectedRoom, setSelectedRoom] = useState(null)
+  const [showNotes, setShowNotes] = useState(false)
   
   // Broadcast online status để students thấy
   useBroadcastOnline(user?.id)
@@ -295,6 +297,19 @@ export default function CounselorChat() {
                         }
                       </p>
                     </div>
+                    
+                    {/* Notes Toggle Button */}
+                    <button
+                      onClick={() => setShowNotes(!showNotes)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        showNotes 
+                          ? 'bg-white text-purple-600' 
+                          : 'bg-white/20 text-white hover:bg-white/30'
+                      }`}
+                      title={showNotes ? 'Ẩn ghi chú' : 'Xem ghi chú học sinh'}
+                    >
+                      <StickyNote size={20} />
+                    </button>
                   </div>
                 </div>
 
@@ -310,8 +325,27 @@ export default function CounselorChat() {
                   </div>
                 )}
 
-                {/* Chat Interface */}
-                <ChatInterface chatRoom={selectedRoom} currentUser={user} />
+                {/* Chat Interface with Notes Panel */}
+                <div className="flex flex-1 overflow-hidden">
+                  {/* Chat Area */}
+                  <div className="flex-1 flex flex-col">
+                    <ChatInterface chatRoom={selectedRoom} currentUser={user} />
+                  </div>
+                  
+                  {/* Notes Panel */}
+                  {showNotes && selectedRoom?.student_id && (
+                    <div className="w-80 border-l flex flex-col bg-white">
+                      <StudentNotesPanel
+                        studentId={selectedRoom.student_id}
+                        studentName={getStudentName(selectedRoom)}
+                        counselorId={user?.id}
+                        defaultCollapsed={false}
+                        onClose={() => setShowNotes(false)}
+                        inline={true}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

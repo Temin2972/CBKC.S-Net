@@ -1,11 +1,11 @@
 /**
  * StudentNotesPanel Component
- * Collapsible panel for counselor notes about students
+ * Panel for counselor notes about students - shared across all counselors
  */
 import { useState, useEffect } from 'react'
 import {
     ChevronRight, ChevronLeft, Save, Loader2,
-    StickyNote, Clock, User
+    StickyNote, Clock, User, X
 } from 'lucide-react'
 import { useStudentNotes } from '../../hooks/useStudentNotes'
 
@@ -13,7 +13,9 @@ export default function StudentNotesPanel({
     studentId,
     studentName = 'Học sinh',
     counselorId,
-    defaultCollapsed = true
+    defaultCollapsed = true,
+    onClose = null,  // If provided, shows close button instead of collapse
+    inline = false   // If true, doesn't use fixed positioning
 }) {
     const {
         content,
@@ -41,8 +43,8 @@ export default function StudentNotesPanel({
         setHasChanges(false)
     }
 
-    // Collapsed view
-    if (isCollapsed) {
+    // Collapsed view (only for non-inline mode)
+    if (isCollapsed && !inline && !onClose) {
         return (
             <button
                 onClick={() => setIsCollapsed(false)}
@@ -58,24 +60,34 @@ export default function StudentNotesPanel({
     }
 
     return (
-        <div className="w-80 bg-white border-l shadow-lg flex flex-col h-full">
+        <div className={`bg-white flex flex-col h-full ${inline ? '' : 'w-80 border-l shadow-lg'}`}>
             {/* Header */}
             <div className="p-4 border-b bg-gradient-to-r from-purple-50 to-indigo-50 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <StickyNote size={18} className="text-purple-500" />
                     <div>
-                        <h3 className="font-semibold text-gray-900">Ghi chú</h3>
+                        <h3 className="font-semibold text-gray-900">Ghi chú học sinh</h3>
                         <p className="text-xs text-gray-500 truncate max-w-[180px]">
                             {studentName}
                         </p>
                     </div>
                 </div>
-                <button
-                    onClick={() => setIsCollapsed(true)}
-                    className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
-                >
-                    <ChevronRight size={18} />
-                </button>
+                {onClose ? (
+                    <button
+                        onClick={onClose}
+                        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
+                        title="Đóng ghi chú"
+                    >
+                        <X size={18} />
+                    </button>
+                ) : (
+                    <button
+                        onClick={() => setIsCollapsed(true)}
+                        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
+                    >
+                        <ChevronRight size={18} />
+                    </button>
+                )}
             </div>
 
             {/* Content */}
@@ -90,7 +102,7 @@ export default function StudentNotesPanel({
                             value={localContent}
                             onChange={(e) => setLocalContent(e.target.value)}
                             placeholder="Thêm ghi chú về học sinh này...&#10;&#10;Ví dụ:&#10;- Tình trạng gia đình&#10;- Vấn đề học tập&#10;- Lịch sử tư vấn&#10;- Điều cần lưu ý"
-                            className="flex-1 w-full p-3 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                            className="flex-1 w-full p-3 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none min-h-[200px]"
                         />
 
                         {/* Last updated info */}
@@ -130,13 +142,13 @@ export default function StudentNotesPanel({
                     ) : (
                         <>
                             <Save size={16} />
-                            Lưu ghi chú
+                            {hasChanges ? 'Lưu ghi chú' : 'Đã lưu'}
                         </>
                     )}
                 </button>
 
                 <p className="text-xs text-gray-400 text-center mt-2">
-                    📌 Ghi chú được chia sẻ với các tư vấn viên khác
+                    📌 Ghi chú được lưu vĩnh viễn và chia sẻ với các tư vấn viên khác
                 </p>
             </div>
         </div>
