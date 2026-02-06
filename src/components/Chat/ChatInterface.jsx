@@ -73,44 +73,24 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
 
 `
 
-      // Get existing notes
-      const { data: existingNote, error: fetchError } = await supabase
+      // Try to insert new note first (students can only insert, not read/update)
+      const { data, error } = await supabase
         .from('student_notes')
-        .select('id, content')
-        .eq('student_id', studentId)
-        .single()
+        .insert({
+          student_id: studentId,
+          content: aiNoteEntry
+        })
+        .select()
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error fetching existing notes:', fetchError)
-      }
-
-      let result
-      if (existingNote) {
-        // Prepend AI assessment to existing notes
-        const updatedContent = aiNoteEntry + (existingNote.content || '')
-        result = await supabase
-          .from('student_notes')
-          .update({ 
-            content: updatedContent,
-            updated_at: new Date().toISOString()
-          })
-          .eq('student_id', studentId)
-          .select()
+      if (error) {
+        // If duplicate (note already exists), that's fine - counselor will update it
+        if (error.code === '23505') { // unique_violation
+          console.log('ℹ️ Student notes already exist, skipping AI assessment save (counselor can update)')
+        } else {
+          console.error('❌ Error saving AI assessment to notes:', error)
+        }
       } else {
-        // Create new note with AI assessment
-        result = await supabase
-          .from('student_notes')
-          .insert({
-            student_id: studentId,
-            content: aiNoteEntry
-          })
-          .select()
-      }
-
-      if (result.error) {
-        console.error('❌ Error saving AI assessment to notes:', result.error)
-      } else {
-        console.log('✅ AI assessment saved to student notes:', result.data)
+        console.log('✅ AI assessment saved to student notes:', data)
       }
     } catch (error) {
       console.error('❌ Error saving AI assessment to notes:', error)
