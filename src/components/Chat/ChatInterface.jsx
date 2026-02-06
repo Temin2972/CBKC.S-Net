@@ -38,6 +38,71 @@ export default function ChatInterface({ chatRoom, currentUser }) {
     })
   }, [messages])
 
+  // Save AI assessment to student notes
+  const saveAIAssessmentToNotes = useCallback(async (studentId, assessment) => {
+    if (!studentId || !assessment) return
+
+    try {
+      // Format the AI assessment as a note entry
+      const timestamp = new Date().toLocaleString('vi-VN')
+      const urgencyLabels = {
+        0: '🟢 Bình thường',
+        1: '🟡 Cần chú ý', 
+        2: '🟠 Khẩn cấp',
+        3: '🔴 Rất khẩn cấp'
+      }
+      const suicideRiskLabels = {
+        'none': 'Không có',
+        'low': 'Thấp',
+        'medium': 'Trung bình',
+        'high': 'Cao'
+      }
+
+      const aiNoteEntry = `
+═══════════════════════════════════════
+🤖 ĐÁNH GIÁ TỰ ĐỘNG BỞI AI - ${timestamp}
+═══════════════════════════════════════
+📊 Mức độ khẩn cấp: ${urgencyLabels[assessment.urgencyLevel] || 'Chưa xác định'}
+⚠️ Nguy cơ tự hại: ${suicideRiskLabels[assessment.suicideRisk] || 'Không có'}
+${assessment.mainIssues?.length > 0 ? `📋 Vấn đề chính: ${assessment.mainIssues.join(', ')}` : ''}
+${assessment.emotionalState ? `💭 Trạng thái cảm xúc: ${assessment.emotionalState}` : ''}
+${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
+───────────────────────────────────────
+⚡ Đây là đánh giá tự động, cần xác nhận bởi tư vấn viên
+═══════════════════════════════════════
+
+`
+
+      // Get existing notes
+      const { data: existingNote } = await supabase
+        .from('student_notes')
+        .select('id, content')
+        .eq('student_id', studentId)
+        .single()
+
+      if (existingNote) {
+        // Prepend AI assessment to existing notes
+        const updatedContent = aiNoteEntry + (existingNote.content || '')
+        await supabase
+          .from('student_notes')
+          .update({ content: updatedContent })
+          .eq('student_id', studentId)
+      } else {
+        // Create new note with AI assessment
+        await supabase
+          .from('student_notes')
+          .insert({
+            student_id: studentId,
+            content: aiNoteEntry
+          })
+      }
+
+      console.log('✅ AI assessment saved to student notes')
+    } catch (error) {
+      console.error('❌ Error saving AI assessment to notes:', error)
+    }
+  }, [])
+
   // Send AI message to chat
   const sendAIMessage = useCallback(async (content, isIntro = false) => {
     if (!chatRoom?.id) {
@@ -120,6 +185,9 @@ export default function ChatInterface({ chatRoom, currentUser }) {
             if (updateError) {
               console.error('❌ Error updating chat room assessment:', updateError)
             }
+
+            // Also save AI assessment to student notes
+            await saveAIAssessmentToNotes(chatRoom.student_id, assessment)
           }
         }
       }
