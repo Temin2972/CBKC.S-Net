@@ -54,16 +54,19 @@ export function useStudentNotes(studentId) {
     useEffect(() => {
         fetchNotes()
 
-        // Subscribe to changes
+        // Subscribe to changes (filter client-side to avoid binding mismatch)
         const channel = supabase
             .channel(`notes-${studentId}`)
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
-                table: 'student_notes',
-                filter: `student_id=eq.${studentId}`
-            }, () => {
-                fetchNotes()
+                table: 'student_notes'
+            }, (payload) => {
+                // Filter client-side
+                const record = payload.new || payload.old
+                if (record?.student_id === studentId) {
+                    fetchNotes()
+                }
             })
             .subscribe()
 

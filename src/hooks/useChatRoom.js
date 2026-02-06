@@ -82,11 +82,14 @@ export function useChatRoom(userId, userRole) {
         {
           event: '*',
           schema: 'public',
-          table: 'chat_rooms',
-          filter: `student_id=eq.${userId}`
+          table: 'chat_rooms'
         },
         (payload) => {
-          console.log('Chat room updated:', payload)
+          // Filter client-side to avoid binding mismatch
+          const record = payload.new || payload.old
+          if (record?.student_id !== userId) return
+          
+          console.log('Chat room updated:', payload.eventType)
           if (payload.eventType === 'DELETE') {
             setChatRoom(null)
           } else {

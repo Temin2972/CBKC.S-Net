@@ -96,26 +96,16 @@ export function useChatMessages(chatRoomId, currentUserId) {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
-          table: 'chat_messages',
-          filter: `chat_room_id=eq.${chatRoomId}`
+          table: 'chat_messages'
         },
         async (payload) => {
-          console.log('New message received:', payload)
-          fetchMessages() // Chỉ refetch messages, KHÔNG tạo notification
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `chat_room_id=eq.${chatRoomId}`
-        },
-        (payload) => {
-          console.log('Message deleted:', payload)
+          // Filter client-side to avoid binding mismatch
+          const record = payload.new || payload.old
+          if (record?.chat_room_id !== chatRoomId) return
+          
+          console.log('Message change received:', payload.eventType)
           fetchMessages()
         }
       )

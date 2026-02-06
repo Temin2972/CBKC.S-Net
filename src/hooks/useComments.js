@@ -18,46 +18,23 @@ export function useComments(postId, currentUserId) {
 
     fetchComments()
 
-    // Subscribe to real-time comment updates
+    // Subscribe to real-time comment updates (filter client-side to avoid binding mismatch)
     const channel = supabase
       .channel(`comments-${postId}`)
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
-          table: 'comments',
-          filter: `post_id=eq.${postId}`
+          table: 'comments'
         },
         (payload) => {
-          console.log('New comment:', payload)
-          fetchComments() // Refetch all comments when new one is added
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'comments',
-          filter: `post_id=eq.${postId}`
-        },
-        (payload) => {
-          console.log('Comment updated:', payload)
-          fetchComments() // Refetch when comment is updated (likes)
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'comments',
-          filter: `post_id=eq.${postId}`
-        },
-        (payload) => {
-          console.log('Comment deleted:', payload)
-          fetchComments() // Refetch when comment is deleted
+          // Filter client-side
+          const record = payload.new || payload.old
+          if (record?.post_id !== postId) return
+          
+          console.log('Comment change:', payload.eventType)
+          fetchComments()
         }
       )
       .subscribe((status) => {

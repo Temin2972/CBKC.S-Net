@@ -101,10 +101,13 @@ export function useCounselorAvailability(counselorId) {
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
-                table: 'counselor_availability',
-                filter: `counselor_id=eq.${counselorId}`
-            }, () => {
-                fetchAvailability()
+                table: 'counselor_availability'
+            }, (payload) => {
+                // Filter client-side to avoid binding mismatch
+                const record = payload.new || payload.old
+                if (record?.counselor_id === counselorId) {
+                    fetchAvailability()
+                }
             })
             .subscribe()
 
