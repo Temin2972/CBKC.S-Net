@@ -4,7 +4,6 @@
  */
 import { Link } from 'react-router-dom'
 import { 
-  Heart, 
   Phone, 
   MapPin, 
   Mail,
@@ -39,7 +38,7 @@ export default function Footer() {
           {/* Brand & Description */}
           <div className="lg:col-span-1 list-item-enter" style={{ animationDelay: '0.1s' }}>
             <div className="flex items-center gap-2 mb-4">
-              <Heart className="w-8 h-8 text-teal-400 hover-heartbeat" />
+              <img src="/icon.svg" alt="S-Net" className="w-8 h-8" />
               <span className="text-xl font-bold">S-Net</span>
             </div>
             <p className="text-gray-400 text-sm mb-4">

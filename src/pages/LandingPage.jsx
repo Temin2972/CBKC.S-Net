@@ -4,9 +4,6 @@ import { useQuotes } from '../hooks/useQuotes'
 import Footer from '../components/Layout/Footer'
 import { ROUTES } from '../constants'
 
-// Background image - Local image from user
-const LANDING_BG = '/images/background.jpg'
-
 export default function LandingPage() {
   const navigate = useNavigate()
   const { quote, loading: quoteLoading } = useQuotes()
@@ -16,21 +13,8 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen text-gray-900 overflow-hidden relative">
-      {/* Background Image with blur */}
-      <div
-        className="fixed inset-0 z-0"
-        style={{
-          backgroundImage: `url(${LANDING_BG})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          filter: 'blur(3px) brightness(0.9)'
-        }}
-      />
-      {/* Gradient overlay */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-br from-teal-900/30 via-emerald-800/20 to-cyan-900/30" />
-
-      {/* Animated Floating Orbs - Calming therapy room aesthetic */}
+    <div className="min-h-screen bg-animated-gradient text-gray-900 overflow-hidden relative">
+      {/* Floating Orbs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="floating-orb floating-orb-1"></div>
         <div className="floating-orb floating-orb-2"></div>

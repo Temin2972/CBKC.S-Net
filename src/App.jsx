@@ -31,10 +31,13 @@ import ProtectedRoute from './components/Layout/ProtectedRoute'
 /**
  * Route configuration for cleaner routing
  */
-const publicRoutes = [
+const guestOnlyRoutes = [
   { path: ROUTES.LANDING, element: LandingPage },
   { path: ROUTES.LOGIN, element: Login },
   { path: ROUTES.REGISTER, element: Register },
+]
+
+const publicRoutes = [
   { path: ROUTES.GUIDE, element: Guide },
   { path: ROUTES.INFO, element: Info },
   { path: ROUTES.CONTACT, element: Contact },
@@ -69,13 +72,18 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes - Redirect to home if logged in */}
-        {publicRoutes.map(({ path, element: Element }) => (
+        {/* Guest Only Routes - Redirect to home if logged in */}
+        {guestOnlyRoutes.map(({ path, element: Element }) => (
           <Route
             key={path}
             path={path}
             element={user ? <Navigate to={ROUTES.HOME} /> : <Element />}
           />
+        ))}
+
+        {/* Public Routes - Accessible to everyone */}
+        {publicRoutes.map(({ path, element: Element }) => (
+          <Route key={path} path={path} element={<Element />} />
         ))}
 
         {/* Protected Routes - Require Authentication */}

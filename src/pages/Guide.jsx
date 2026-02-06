@@ -148,7 +148,14 @@ export default function Guide() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50">
+    <div className="min-h-screen bg-animated-gradient relative overflow-hidden">
+      {/* Floating Orbs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="floating-orb floating-orb-1"></div>
+        <div className="floating-orb floating-orb-2"></div>
+        <div className="floating-orb floating-orb-3"></div>
+      </div>
+
       <Navbar />
 
       {/* Progress Indicator */}

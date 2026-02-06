@@ -31,10 +31,17 @@ const TEAM_VALUES = [
 
 export default function Info() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50 flex flex-col">
+    <div className="min-h-screen bg-animated-gradient relative overflow-hidden flex flex-col">
+      {/* Floating Orbs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="floating-orb floating-orb-1"></div>
+        <div className="floating-orb floating-orb-2"></div>
+        <div className="floating-orb floating-orb-3"></div>
+      </div>
+
       <Navbar />
 
-      <main className="flex-1 py-12 px-4">
+      <main className="flex-1 py-12 px-4 relative z-10">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">

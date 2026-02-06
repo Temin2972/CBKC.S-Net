@@ -4,7 +4,7 @@
  */
 import { useCallback, useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Home, MessageCircle, Users, Shield, LogOut, CalendarClock, Heart, ClipboardList, MessageSquarePlus, User, ChevronDown } from 'lucide-react'
+import { Home, MessageCircle, Users, Shield, LogOut, CalendarClock, ClipboardList, MessageSquarePlus, User, ChevronDown } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { ROUTES } from '../../constants'
 import { NAVIGATION_LABELS } from '../../constants/messages'
@@ -60,10 +60,11 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to={ROUTES.HOME} className="flex items-center gap-2 group">
-            <div className="relative">
-              <Heart className="w-8 h-8 text-teal-500 group-hover:scale-110 transition-transform hover-heartbeat" strokeWidth={1.5} />
-              <div className="absolute inset-0 bg-teal-400/20 blur-lg rounded-full group-hover:bg-teal-400/30 transition-colors" />
-            </div>
+            <img 
+              src="/icon.svg" 
+              alt="S-Net" 
+              className="w-8 h-8 group-hover:scale-110 transition-transform" 
+            />
             <span className="text-xl font-semibold text-gray-800">S-Net</span>
           </Link>
 
