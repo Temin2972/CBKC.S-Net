@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useChatRoom } from '../hooks/useChatRoom'
+import { useChatRoom, URGENCY_LEVELS } from '../hooks/useChatRoom'
 import { useBroadcastOnline } from '../hooks/useOnlineStatus'
 import Navbar from '../components/Layout/Navbar'
 import ChatInterface from '../components/Chat/ChatInterface'
-import { MessageCircle, Users, Clock, EyeOff, Eye, Shield } from 'lucide-react'
+import UrgencyBadge from '../components/Chat/UrgencyBadge'
+import { MessageCircle, Users, Clock, EyeOff, Eye, Shield, AlertTriangle } from 'lucide-react'
 
 // Background image - Psychology room
 const CHAT_BG = 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=1920&q=80'
@@ -157,6 +158,8 @@ export default function CounselorChat() {
                     {allChatRooms.map((room) => {
                       const isPrivate = isPrivateRoom(room)
                       const isMyPrivate = isMyPrivateRoom(room)
+                      const urgencyLevel = room.urgency_level || 0
+                      const isUrgent = urgencyLevel >= URGENCY_LEVELS.URGENT
                       
                       return (
                         <button
@@ -164,12 +167,20 @@ export default function CounselorChat() {
                           onClick={() => setSelectedRoom(room)}
                           className={`w-full px-4 py-4 hover:bg-purple-50 transition-colors text-left relative ${
                             selectedRoom?.id === room.id ? 'bg-purple-50 border-l-4 border-purple-500' : ''
-                          }`}
+                          } ${isUrgent ? 'bg-red-50/50' : ''}`}
                         >
                           <div className="flex items-start gap-3">
                             {/* Avatar */}
                             <div className="relative">
-                              <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0 ${
+                                urgencyLevel >= URGENCY_LEVELS.CRITICAL 
+                                  ? 'bg-gradient-to-br from-red-500 to-red-600 ring-2 ring-red-300 animate-pulse'
+                                  : urgencyLevel >= URGENCY_LEVELS.URGENT
+                                    ? 'bg-gradient-to-br from-orange-400 to-red-500'
+                                    : urgencyLevel >= URGENCY_LEVELS.ATTENTION
+                                      ? 'bg-gradient-to-br from-yellow-400 to-orange-400'
+                                      : 'bg-gradient-to-br from-purple-400 to-pink-400'
+                              }`}>
                                 {getStudentInitial(room)}
                               </div>
                               
@@ -193,6 +204,13 @@ export default function CounselorChat() {
                                   <EyeOff size={14} className={isMyPrivate ? 'text-purple-600' : 'text-gray-400'} />
                                 )}
                               </div>
+
+                              {/* Urgency Badge */}
+                              {urgencyLevel > 0 && (
+                                <div className="mb-1">
+                                  <UrgencyBadge level={urgencyLevel} size="sm" showLabel={true} />
+                                </div>
+                              )}
 
                               {/* Privacy status text */}
                               {isPrivate && (
@@ -236,7 +254,13 @@ export default function CounselorChat() {
             ) : (
               <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                 {/* Chat Header */}
-                <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4">
+                <div className={`px-6 py-4 ${
+                  selectedRoom.urgency_level >= URGENCY_LEVELS.CRITICAL
+                    ? 'bg-gradient-to-r from-red-500 to-red-600'
+                    : selectedRoom.urgency_level >= URGENCY_LEVELS.URGENT
+                      ? 'bg-gradient-to-r from-orange-500 to-red-500'
+                      : 'bg-gradient-to-r from-purple-500 to-pink-500'
+                }`}>
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg relative">
                       {getStudentInitial(selectedRoom)}
@@ -253,6 +277,13 @@ export default function CounselorChat() {
                         </h2>
                         {isPrivateRoom(selectedRoom) && (
                           <EyeOff size={18} className="text-white/80" />
+                        )}
+                        {selectedRoom.urgency_level > 0 && (
+                          <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs text-white font-medium">
+                            {selectedRoom.urgency_level >= URGENCY_LEVELS.CRITICAL ? '🔴 Rất khẩn cấp' :
+                             selectedRoom.urgency_level >= URGENCY_LEVELS.URGENT ? '🟠 Khẩn cấp' :
+                             selectedRoom.urgency_level >= URGENCY_LEVELS.ATTENTION ? '🟡 Cần chú ý' : ''}
+                          </span>
                         )}
                       </div>
                       <p className="text-white/90 text-sm">

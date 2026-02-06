@@ -105,12 +105,18 @@ npm run preview  # Preview production build
 The "Tâm An" AI assistant in `src/components/Chat/ChatInterface.jsx` has specific behavior:
 - **Immediate greeting**: AI introduces itself immediately when a student sends their first message
 - **Stops when counselor replies**: Once a counselor sends a message, AI stops responding
+- **Urgency assessment**: AI evaluates student messages and sets `urgency_level` (0-3) on the chat room
 - **Requires API key**: If `VITE_GEMINI_API_KEY` is not set, AI returns a fallback "technical issue" message
 
 Key functions in `src/lib/aiTriage.js`:
 - `generateAIResponse()` - Generates conversational response + assessment
 - `shouldAIRespond(chatRoom)` - Checks if AI should still respond (no counselor reply yet)
 - `URGENCY_LEVELS` - 0 (normal) to 3 (critical/self-harm)
+
+**Counselor chat screen** (`src/pages/CounselorChat.jsx`):
+- Students are sorted by urgency level (highest first), then by last message time
+- Visual indicators: Avatar color changes based on urgency, urgency badges displayed
+- Critical cases (level 3) show pulsing red avatar with ring
 
 ## Deployment
 
