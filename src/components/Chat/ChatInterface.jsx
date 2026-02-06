@@ -8,8 +8,8 @@ import { generateAIResponse, shouldAIRespond } from '../../lib/aiTriage'
 // AI Response delay in milliseconds (0 = immediate greeting)
 const AI_RESPONSE_DELAY = 0
 
-// AI Introduction message (with marker prefix)
-const AI_INTRO_MESSAGE = `🤖 **Tâm An:** Chào em! 👋 Hiện tại các thầy cô đang bận, nhưng mình là Tâm An - trợ lý tâm lý của S-Net để giúp em trong quá trình chờ thầy cô nha! 
+// AI Introduction message
+const AI_INTRO_MESSAGE = `Chào em! 👋 Hiện tại các thầy cô đang bận, nhưng mình là Tâm An - trợ lý tâm lý của S-Net để giúp em trong quá trình chờ thầy cô nha! 
 
 Mình sẵn sàng lắng nghe em chia sẻ. Em có thể kể cho mình nghe em đang cảm thấy như thế nào không? 💭`
 
@@ -121,7 +121,7 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
   }, [])
 
   // Send AI message to chat
-  const sendAIMessage = useCallback(async (content, isIntro = false) => {
+  const sendAIMessage = useCallback(async (content) => {
     if (!chatRoom?.id) {
       console.error('Cannot send AI message: No chat room ID')
       return false
@@ -129,13 +129,11 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
 
     try {
       console.log('🤖 Sending AI message to room:', chatRoom.id)
-      // For intro message, content already has marker. For responses, add marker.
-      const aiContent = isIntro ? content : `🤖 **Tâm An:** ${content}`
       
       const { data, error } = await supabase.from('chat_messages').insert({
         chat_room_id: chatRoom.id,
         sender_id: null, // NULL indicates system/AI message
-        content: aiContent,
+        content: content,
         is_system: true
       }).select()
 
@@ -391,7 +389,7 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
   const getSenderDisplayName = (message) => {
     // Check if this is an AI message (system message with null sender)
     if (message.is_system && message.sender_id === null) {
-      return '🤖 Tâm An (Trợ lý AI)'
+      return 'Tâm An (Trợ lý AI)'
     }
 
     if (!message.sender) {
@@ -413,12 +411,8 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
   }
 
   const isAIMessage = (message) => {
-    // AI messages are system messages with null sender_id and contain the AI marker
-    return message.is_system && (
-      message.sender_id === null || 
-      message.content?.includes('🤖') ||
-      message.content?.includes('Tâm An')
-    )
+    // AI messages are system messages with null sender_id
+    return message.is_system && message.sender_id === null
   }
 
   const isMessageRead = (message) => {
