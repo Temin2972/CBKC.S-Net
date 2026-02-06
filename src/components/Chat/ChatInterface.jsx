@@ -196,7 +196,7 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
     }
 
     setAiProcessing(false)
-  }, [chatRoom?.id, counselorHasReplied, sendAIMessage])
+  }, [chatRoom?.id, chatRoom?.student_id, counselorHasReplied, sendAIMessage, saveAIAssessmentToNotes])
 
   // Start AI timer after student's first message
   const startAITimer = useCallback(() => {
