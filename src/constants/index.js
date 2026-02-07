@@ -50,6 +50,19 @@ export const NOTIFICATION_SETTINGS = {
   AUTO_READ_DELAY: 1000, // 1 second
 }
 
+// Post topics for community
+export const POST_TOPICS = {
+  ALL: 'all',
+  MENTAL: 'mental',
+  OTHERS: 'others',
+}
+
+export const TOPIC_LABELS = {
+  [POST_TOPICS.ALL]: 'Tất cả',
+  [POST_TOPICS.MENTAL]: 'Tâm lý',
+  [POST_TOPICS.OTHERS]: 'Ngoài lề',
+}
+
 // Password validation
 export const PASSWORD_RULES = {
   MIN_LENGTH: 6,

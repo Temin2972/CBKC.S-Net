@@ -9,11 +9,19 @@ import {
   Image as ImageIcon,
   ChevronDown,
   ChevronUp,
-  Loader2
+  Loader2,
+  Brain,
+  Coffee
 } from 'lucide-react'
 import { usePendingContent } from '../../hooks/usePendingContent'
 import { FLAG_LEVELS } from '../../lib/contentModeration'
 import { supabase } from '../../lib/supabaseClient'
+import { POST_TOPICS, TOPIC_LABELS } from '../../constants'
+
+const TOPIC_CONFIG = {
+  [POST_TOPICS.MENTAL]: { label: TOPIC_LABELS[POST_TOPICS.MENTAL], icon: Brain, color: 'purple' },
+  [POST_TOPICS.OTHERS]: { label: TOPIC_LABELS[POST_TOPICS.OTHERS], icon: Coffee, color: 'orange' }
+}
 
 export default function PendingSection() {
   const navigate = useNavigate()
@@ -29,6 +37,7 @@ export default function PendingSection() {
   const [expandedItems, setExpandedItems] = useState(new Set())
   const [showFlagOptions, setShowFlagOptions] = useState(null)
   const [chattingUserId, setChattingUserId] = useState(null)
+  const [selectedTopics, setSelectedTopics] = useState({}) // Track topic selection per item
 
   const toggleExpand = (id) => {
     const newExpanded = new Set(expandedItems)
@@ -42,8 +51,18 @@ export default function PendingSection() {
 
   const handleApprove = async (item) => {
     setProcessingId(item.id)
-    await approveContent(item)
+    // Get the selected topic or use the original one
+    const topic = selectedTopics[item.id] || item.topic || POST_TOPICS.MENTAL
+    await approveContent(item, topic)
     setProcessingId(null)
+  }
+
+  const handleTopicChange = (itemId, topic) => {
+    setSelectedTopics(prev => ({ ...prev, [itemId]: topic }))
+  }
+
+  const getItemTopic = (item) => {
+    return selectedTopics[item.id] || item.topic || POST_TOPICS.MENTAL
   }
 
   const handleReject = async (itemId) => {
@@ -203,6 +222,16 @@ export default function PendingSection() {
                         <span className="px-2 py-0.5 bg-blue-200 rounded-full text-xs text-blue-700">
                           {item.content_type === 'post' ? 'Bài viết' : 'Bình luận'}
                         </span>
+                        {item.content_type === 'post' && (
+                          <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
+                            getItemTopic(item) === POST_TOPICS.MENTAL 
+                              ? 'bg-purple-100 text-purple-700' 
+                              : 'bg-orange-100 text-orange-700'
+                          }`}>
+                            {getItemTopic(item) === POST_TOPICS.MENTAL ? <Brain size={10} /> : <Coffee size={10} />}
+                            {TOPIC_CONFIG[getItemTopic(item)]?.label || 'Tâm lý'}
+                          </span>
+                        )}
                         <span>{formatTime(item.created_at)}</span>
                         {item.image_url && (
                           <span className="flex items-center gap-1 text-blue-600">
@@ -254,6 +283,37 @@ export default function PendingSection() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Topic Selector for Posts */}
+                  {item.content_type === 'post' && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Chủ đề bài viết:</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleTopicChange(item.id, POST_TOPICS.MENTAL)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 transition-all text-sm ${
+                            getItemTopic(item) === POST_TOPICS.MENTAL
+                              ? 'border-purple-500 bg-purple-50 text-purple-700'
+                              : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                          }`}
+                        >
+                          <Brain size={14} />
+                          Tâm lý
+                        </button>
+                        <button
+                          onClick={() => handleTopicChange(item.id, POST_TOPICS.OTHERS)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 transition-all text-sm ${
+                            getItemTopic(item) === POST_TOPICS.OTHERS
+                              ? 'border-orange-500 bg-orange-50 text-orange-700'
+                              : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                          }`}
+                        >
+                          <Coffee size={14} />
+                          Ngoài lề
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Action Buttons */}
                   <div className="flex flex-wrap items-center gap-2">

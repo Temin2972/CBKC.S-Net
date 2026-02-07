@@ -52,17 +52,19 @@ export function usePendingContent() {
   }
 
   // Approve content - move to posts/comments table
-  const approveContent = async (item) => {
+  // Now accepts optional topic parameter for counselor to override
+  const approveContent = async (item, overrideTopic = null) => {
     try {
       if (item.content_type === 'post') {
-        // Create post
+        // Create post with topic (use override or original)
         const { error: postError } = await supabase
           .from('posts')
           .insert({
             author_id: item.user_id,
             content: item.content,
             image_url: item.image_url,
-            flag_level: 0 // Approved = normal
+            flag_level: 0, // Approved = normal
+            topic: overrideTopic || item.topic || 'mental'
           })
 
         if (postError) throw postError
