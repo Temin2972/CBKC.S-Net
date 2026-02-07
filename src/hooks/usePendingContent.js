@@ -83,16 +83,13 @@ export function usePendingContent() {
         if (commentError) throw commentError
       }
 
-      // Update pending content status
-      const { error: updateError } = await supabase
+      // Delete from pending_content after successful insertion
+      const { error: deleteError } = await supabase
         .from('pending_content')
-        .update({ 
-          status: 'approved',
-          reviewed_at: new Date().toISOString()
-        })
+        .delete()
         .eq('id', item.id)
 
-      if (updateError) throw updateError
+      if (deleteError) throw deleteError
 
       await fetchPendingContent()
       return { error: null }
