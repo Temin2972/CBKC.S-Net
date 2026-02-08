@@ -67,15 +67,10 @@ export default function CounseledToggle({
     // Send feedback prompt message to chat
     const sendFeedbackPrompt = async (roomId) => {
         try {
-            const feedbackMessage = `✅ **Phiên tư vấn đã hoàn thành!**
+            const feedbackMessage = `Nếu phiên tư vấn đã hoàn thành, hy vọng em có thể giúp chúng mình cải thiện dịch vụ bằng cách đánh giá phiên tư vấn
+Mọi phản hồi của em đều rất quý giá với chúng mình! ❤️
 
-Cảm ơn em đã tin tưởng và chia sẻ với chúng mình. Hy vọng buổi tư vấn đã giúp em phần nào.
-
-💬 **Em có thể giúp chúng mình cải thiện dịch vụ bằng cách đánh giá phiên tư vấn:**
-
-[👉 Đánh giá ngay](/feedback)
-
-Mọi phản hồi của em đều rất quý giá với chúng mình! ❤️`
+[ Phản hồi ](/feedback)`
 
             await supabase.from('chat_messages').insert({
                 chat_room_id: roomId,
