@@ -144,9 +144,9 @@ export default function CautionSection() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
+    <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-orange-100 rounded-xl">
             <AlertTriangle className="text-orange-500" size={24} />
@@ -160,19 +160,19 @@ export default function CautionSection() {
         </div>
 
         {/* Counts */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
           {counts.immediate > 0 && (
-            <div className="flex items-center gap-1 px-3 py-1 bg-red-100 rounded-full">
+            <div className="flex items-center gap-1 px-2 py-1 bg-red-100 rounded-full">
               <AlertTriangle size={14} className="text-red-600" />
-              <span className="text-sm font-semibold text-red-600">
+              <span className="text-xs font-semibold text-red-600">
                 {counts.immediate} khẩn cấp
               </span>
             </div>
           )}
           {counts.mild > 0 && (
-            <div className="flex items-center gap-1 px-3 py-1 bg-yellow-100 rounded-full">
+            <div className="flex items-center gap-1 px-2 py-1 bg-yellow-100 rounded-full">
               <AlertCircle size={14} className="text-yellow-600" />
-              <span className="text-sm font-semibold text-yellow-600">
+              <span className="text-xs font-semibold text-yellow-600">
                 {counts.mild} theo dõi
               </span>
             </div>
@@ -209,29 +209,27 @@ export default function CautionSection() {
                 className={`${styles.headerBg} px-4 py-3 cursor-pointer`}
                 onClick={() => toggleUserExpand(userGroup.userId)}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {styles.icon}
-                    
-                    {/* User Avatar */}
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold">
-                      {userGroup.user?.full_name?.[0] || 'A'}
-                    </div>
+                <div className="flex items-center gap-3">
+                  {styles.icon}
+                  
+                  {/* User Avatar */}
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                    {userGroup.user?.full_name?.[0] || 'A'}
+                  </div>
 
-                    <div>
-                      <h4 className="font-semibold text-gray-800">
-                        {userGroup.user?.full_name || 'Ẩn danh'}
-                      </h4>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <span>{userGroup.items.length} nội dung được gắn cờ</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs ${styles.badge}`}>
-                          {getFlagLevelLabel(userGroup.highestFlagLevel)}
-                        </span>
-                      </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-gray-800 truncate">
+                      {userGroup.user?.full_name || 'Ẩn danh'}
+                    </h4>
+                    <div className="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
+                      <span>{userGroup.items.length} nội dung được gắn cờ</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs ${styles.badge}`}>
+                        {getFlagLevelLabel(userGroup.highestFlagLevel)}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     {/* Quick Chat Button */}
                     <button
                       onClick={(e) => {
@@ -239,27 +237,24 @@ export default function CautionSection() {
                         handleChatWithStudent(userGroup.userId)
                       }}
                       disabled={chattingUserId === userGroup.userId}
-                      className="px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2 text-sm disabled:opacity-50"
+                      className="px-2 py-1.5 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-1 text-xs disabled:opacity-50 whitespace-nowrap"
                     >
                       {chattingUserId === userGroup.userId ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" />
-                          <span>Đang mở...</span>
-                        </>
+                        <Loader2 size={14} className="animate-spin" />
                       ) : (
                         <>
-                          <MessageCircle size={16} />
-                          <span>Chat ngay</span>
+                          <MessageCircle size={14} />
+                          <span className="hidden sm:inline">Chat ngay</span>
                         </>
                       )}
                     </button>
 
                     {/* Expand/Collapse */}
-                    <button className="p-2 hover:bg-white/50 rounded-lg transition-colors">
+                    <button className="p-1.5 hover:bg-white/50 rounded-lg transition-colors">
                       {isExpanded ? (
-                        <ChevronUp size={20} className="text-gray-600" />
+                        <ChevronUp size={18} className="text-gray-600" />
                       ) : (
-                        <ChevronDown size={20} className="text-gray-600" />
+                        <ChevronDown size={18} className="text-gray-600" />
                       )}
                     </button>
                   </div>
