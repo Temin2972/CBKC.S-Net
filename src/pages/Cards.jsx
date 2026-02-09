@@ -23,9 +23,12 @@ export default function Cards() {
   
   const [shuffledCards, setShuffledCards] = useState([])
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [viewedIds, setViewedIds] = useState(new Set()) // Track viewed cards
   const [copied, setCopied] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [newCardTitle, setNewCardTitle] = useState('')
   const [newCardContent, setNewCardContent] = useState('')
+  const [newCardAuthor, setNewCardAuthor] = useState('')
   const [swipeDirection, setSwipeDirection] = useState(null)
   
   // Touch/swipe handling
@@ -37,34 +40,59 @@ export default function Cards() {
   useEffect(() => {
     if (cards.length > 0) {
       setShuffledCards(getShuffledCards())
+      setViewedIds(new Set())
     }
   }, [cards, getShuffledCards])
 
   const currentCard = shuffledCards[currentIndex]
 
-  // Navigate to previous card
+  // Get next random card that hasn't been viewed yet
+  const getNextRandomIndex = useCallback(() => {
+    if (shuffledCards.length === 0) return 0
+    
+    // Get all unviewed indices except current
+    const unviewedIndices = shuffledCards
+      .map((_, idx) => idx)
+      .filter(idx => idx !== currentIndex && !viewedIds.has(shuffledCards[idx]?.id))
+    
+    // If all cards have been viewed, reset and reshuffle
+    if (unviewedIndices.length === 0) {
+      setViewedIds(new Set())
+      const allIndices = shuffledCards.map((_, idx) => idx).filter(idx => idx !== currentIndex)
+      if (allIndices.length === 0) return currentIndex
+      return allIndices[Math.floor(Math.random() * allIndices.length)]
+    }
+    
+    return unviewedIndices[Math.floor(Math.random() * unviewedIndices.length)]
+  }, [shuffledCards, currentIndex, viewedIds])
+
+  // Navigate to previous card (random unviewed)
   const goToPrevious = useCallback(() => {
     if (shuffledCards.length === 0) return
     setSwipeDirection('right')
     setTimeout(() => {
-      setCurrentIndex(prev => 
-        prev === 0 ? shuffledCards.length - 1 : prev - 1
-      )
+      const nextIdx = getNextRandomIndex()
+      if (currentCard) {
+        setViewedIds(prev => new Set([...prev, currentCard.id]))
+      }
+      setCurrentIndex(nextIdx)
       setSwipeDirection(null)
     }, 150)
-  }, [shuffledCards.length])
+  }, [shuffledCards.length, getNextRandomIndex, currentCard])
 
-  // Navigate to next card
+  // Navigate to next card (random unviewed)
   const goToNext = useCallback(() => {
     if (shuffledCards.length === 0) return
     setSwipeDirection('left')
     setTimeout(() => {
-      setCurrentIndex(prev => 
-        prev === shuffledCards.length - 1 ? 0 : prev + 1
-      )
+      const nextIdx = getNextRandomIndex()
+      if (currentCard) {
+        setViewedIds(prev => new Set([...prev, currentCard.id]))
+      }
+      setCurrentIndex(nextIdx)
       setSwipeDirection(null)
     }, 150)
-  }, [shuffledCards.length])
+  }, [shuffledCards.length, getNextRandomIndex, currentCard])
 
   // Handle touch start
   const handleTouchStart = (e) => {
@@ -104,7 +132,8 @@ export default function Cards() {
   const handleCopy = async () => {
     if (!currentCard) return
     try {
-      await navigator.clipboard.writeText(currentCard.content)
+      const textToCopy = `${currentCard.title}\n\n${currentCard.content}${currentCard.author ? `\n\n— ${currentCard.author}` : ''}`
+      await navigator.clipboard.writeText(textToCopy)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
@@ -116,9 +145,10 @@ export default function Cards() {
   const handleShare = async () => {
     if (!currentCard) return
     
+    const shareText = `${currentCard.title}\n\n${currentCard.content}${currentCard.author ? `\n\n— ${currentCard.author}` : ''}`
     const shareData = {
-      title: 'S-Net Wellbeing Card',
-      text: currentCard.content,
+      title: currentCard.title || 'S-Net Wellbeing Card',
+      text: shareText,
       url: window.location.href,
     }
 
@@ -127,7 +157,7 @@ export default function Cards() {
         await navigator.share(shareData)
       } else {
         // Fallback: copy to clipboard
-        await navigator.clipboard.writeText(currentCard.content)
+        await navigator.clipboard.writeText(shareText)
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
       }
@@ -140,17 +170,16 @@ export default function Cards() {
   const handleCreateCard = async () => {
     if (!newCardContent.trim()) return
     
-    const result = await createCard(newCardContent, userId)
+    const result = await createCard(newCardTitle || null, newCardContent, newCardAuthor || null, userId)
     if (result.success) {
+      setNewCardTitle('')
       setNewCardContent('')
+      setNewCardAuthor('')
       setShowAddModal(false)
       // Refresh shuffled cards
       setShuffledCards(prev => [result.card, ...prev])
     }
   }
-
-  // Character count for new card
-  const charCount = newCardContent.length
 
   return (
     <div className="min-h-screen relative">
@@ -244,20 +273,29 @@ export default function Cards() {
                   ${swipeDirection === 'right' ? 'translate-x-8 opacity-0' : ''}
                 `}
               >
+                {/* Card Title */}
+                {currentCard.title && (
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
+                    {currentCard.title}
+                  </h2>
+                )}
+
                 {/* Card Content - Scrollable */}
-                <div className="max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
                   <p className="text-gray-700 text-lg md:text-xl leading-relaxed whitespace-pre-wrap">
                     {currentCard.content}
                   </p>
                 </div>
 
-                {/* Card Footer */}
-                <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between">
-                  {/* Card Counter */}
-                  <div className="text-sm text-gray-400">
-                    {currentIndex + 1} / {shuffledCards.length}
-                  </div>
+                {/* Card Author */}
+                {currentCard.author && (
+                  <p className="mt-6 text-right text-gray-500 italic">
+                    — {currentCard.author}
+                  </p>
+                )}
 
+                {/* Card Footer */}
+                <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-end">
                   {/* Action Buttons */}
                   <div className="flex items-center gap-3">
                     <button
@@ -287,27 +325,6 @@ export default function Cards() {
                   </div>
                 </div>
               </div>
-
-              {/* Dot Indicators */}
-              <div className="flex items-center justify-center gap-2 mt-6">
-                {shuffledCards.slice(0, 10).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      index === currentIndex
-                        ? 'bg-white w-6'
-                        : 'bg-white/40 hover:bg-white/60'
-                    }`}
-                    aria-label={`Go to card ${index + 1}`}
-                  />
-                ))}
-                {shuffledCards.length > 10 && (
-                  <span className="text-white/60 text-sm ml-2">
-                    +{shuffledCards.length - 10}
-                  </span>
-                )}
-              </div>
             </div>
           )}
 
@@ -331,27 +348,56 @@ export default function Cards() {
       {/* Add Card Modal */}
       {showAddModal && (
         <Modal onClose={() => setShowAddModal(false)} title="Tạo thẻ mới">
-          <div className="p-6">
-            <p className="text-gray-600 mb-4">
+          <div className="p-6 space-y-4">
+            <p className="text-gray-600">
               Viết một thông điệp an lành để chia sẻ với các học sinh.
             </p>
 
-            <textarea
-              value={newCardContent}
-              onChange={(e) => setNewCardContent(e.target.value)}
-              placeholder="Viết thông điệp của bạn tại đây..."
-              className="w-full h-64 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"
-            />
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tiêu đề <span className="text-gray-400">(tùy chọn)</span>
+              </label>
+              <input
+                type="text"
+                value={newCardTitle}
+                onChange={(e) => setNewCardTitle(e.target.value)}
+                placeholder="Tiêu đề của thẻ..."
+                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                maxLength={200}
+              />
+            </div>
 
-            {/* Character Count */}
-            <div className="flex items-center justify-end mt-2">
-              <span className="text-sm text-gray-400">
-                {charCount} ký tự
-              </span>
+            {/* Content */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nội dung <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={newCardContent}
+                onChange={(e) => setNewCardContent(e.target.value)}
+                placeholder="Viết thông điệp của bạn tại đây..."
+                className="w-full h-48 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"
+              />
+            </div>
+
+            {/* Author */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tác giả <span className="text-gray-400">(tùy chọn)</span>
+              </label>
+              <input
+                type="text"
+                value={newCardAuthor}
+                onChange={(e) => setNewCardAuthor(e.target.value)}
+                placeholder="Tên tác giả hoặc nguồn..."
+                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                maxLength={100}
+              />
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 mt-6">
+            <div className="flex items-center justify-end gap-3 pt-4">
               <button
                 onClick={() => setShowAddModal(false)}
                 className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
