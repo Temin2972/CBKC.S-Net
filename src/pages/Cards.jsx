@@ -346,12 +346,11 @@ export default function Cards() {
       </div>
 
       {/* Add Card Modal */}
-      {showAddModal && (
-        <Modal onClose={() => setShowAddModal(false)} title="Tạo thẻ mới">
-          <div className="p-6 space-y-4">
-            <p className="text-gray-600">
-              Viết một thông điệp an lành để chia sẻ với các học sinh.
-            </p>
+      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Tạo thẻ mới">
+        <div className="p-6 space-y-4">
+          <p className="text-gray-600">
+            Viết một thông điệp an lành để chia sẻ với các học sinh.
+          </p>
 
             {/* Title */}
             <div>
@@ -424,7 +423,6 @@ export default function Cards() {
             </div>
           </div>
         </Modal>
-      )}
 
       {/* Custom Scrollbar Styles */}
       <style>{`
