@@ -600,9 +600,17 @@ export default function Community() {
                   {/* Post Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold">
-                        {post.author?.full_name?.[0] || 'A'}
-                      </div>
+                      {post.author?.avatar_url ? (
+                        <img 
+                          src={post.author.avatar_url} 
+                          alt={post.author.full_name || 'Ẩn danh'}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold">
+                          {post.author?.full_name?.[0] || 'A'}
+                        </div>
+                      )}
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-gray-800">

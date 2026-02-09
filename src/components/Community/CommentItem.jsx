@@ -25,9 +25,17 @@ export default function CommentItem({
     <div className={`${isReply ? 'ml-12' : ''}`}>
       <div className="flex gap-3">
         {/* Avatar */}
-        <div className={`${isReply ? 'w-8 h-8' : 'w-10 h-10'} bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}>
-          {comment.author?.full_name?.[0] || 'A'}
-        </div>
+        {comment.author?.avatar_url ? (
+          <img 
+            src={comment.author.avatar_url} 
+            alt={comment.author.full_name || 'Ẩn danh'}
+            className={`${isReply ? 'w-8 h-8' : 'w-10 h-10'} rounded-full object-cover flex-shrink-0`}
+          />
+        ) : (
+          <div className={`${isReply ? 'w-8 h-8' : 'w-10 h-10'} bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}>
+            {comment.author?.full_name?.[0] || 'A'}
+          </div>
+        )}
 
         {/* Comment Content */}
         <div className="flex-1">

@@ -83,7 +83,7 @@ export function useComments(postId, currentUserId) {
       if (authorIds.length > 0) {
         const { data, error: usersError } = await supabase
           .from('users')
-          .select('id, full_name, role')
+          .select('id, full_name, role, avatar_url')
           .in('id', authorIds)
 
         if (usersError) {

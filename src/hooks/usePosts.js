@@ -34,7 +34,7 @@ export function usePosts(currentUserId) {
       .from('posts')
       .select(`
         *,
-        author:users!posts_author_id_fkey(id, full_name, role)
+        author:users!posts_author_id_fkey(id, full_name, role, avatar_url)
       `)
       .order('created_at', { ascending: false })
     
