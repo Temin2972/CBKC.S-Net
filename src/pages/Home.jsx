@@ -164,7 +164,7 @@ export default function Home() {
                 to={ROUTES.CHAT}
                 className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:scale-[8] transition-all duration-700 ease-out" />
+                <div className="absolute top-0 right-0 w-0 h-0 bg-indigo-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:w-[500px] group-hover:h-[500px] transition-all duration-1000 ease-out" />
                 <div className="relative z-10">
                   <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-all duration-500">
                     <MessageCircle size={28} />
@@ -189,7 +189,7 @@ export default function Home() {
                 to={ROUTES.COMMUNITY}
                 className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-pink-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:scale-[8] transition-all duration-700 ease-out" />
+                <div className="absolute top-0 right-0 w-0 h-0 bg-pink-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:w-[500px] group-hover:h-[500px] transition-all duration-1000 ease-out" />
                 <div className="relative z-10">
                   <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-all duration-500">
                     <Users size={28} />
@@ -210,7 +210,7 @@ export default function Home() {
                 to={ROUTES.BOOKING}
                 className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:scale-[8] transition-all duration-700 ease-out" />
+                <div className="absolute top-0 right-0 w-0 h-0 bg-emerald-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:w-[500px] group-hover:h-[500px] transition-all duration-1000 ease-out" />
                 <div className="relative z-10">
                   <div className="w-14 h-14 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-all duration-500">
                     <CalendarClock size={28} />
@@ -231,7 +231,7 @@ export default function Home() {
                 to={ROUTES.CARDS}
                 className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-rose-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:scale-[8] transition-all duration-700 ease-out" />
+                <div className="absolute top-0 right-0 w-0 h-0 bg-rose-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:w-[500px] group-hover:h-[500px] transition-all duration-1000 ease-out" />
                 <div className="relative z-10">
                   <div className="w-14 h-14 bg-gradient-to-br from-rose-500 to-pink-500 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-all duration-500">
                     <Heart size={28} className="fill-current" />
