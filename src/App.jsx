@@ -18,6 +18,7 @@ import Home from './pages/Home'
 import StudentChat from './pages/StudentChat'
 import CounselorChat from './pages/CounselorChat'
 import Community from './pages/Community'
+import Cards from './pages/Cards'
 import Booking from './pages/Booking'
 import Survey from './pages/Survey'
 import Feedback from './pages/Feedback'
@@ -47,6 +48,7 @@ const publicRoutes = [
 const protectedRoutes = [
   { path: ROUTES.HOME, element: Home },
   { path: ROUTES.COMMUNITY, element: Community },
+  { path: ROUTES.CARDS, element: Cards },
   { path: ROUTES.BOOKING, element: Booking },
   { path: ROUTES.SURVEY, element: Survey },
   { path: ROUTES.FEEDBACK, element: Feedback },

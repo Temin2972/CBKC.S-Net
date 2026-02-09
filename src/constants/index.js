@@ -16,6 +16,7 @@ export const ROUTES = {
   CHAT: '/chat',
   CHAT_ROOM: '/chat/:roomId',
   COMMUNITY: '/community',
+  CARDS: '/cards',
   BOOKING: '/booking',
   SURVEY: '/survey',
   FEEDBACK: '/feedback',

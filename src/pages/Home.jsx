@@ -230,11 +230,9 @@ export default function Home() {
                 </div>
               </Link>
 
-              {/* BTCT6 Card */}
-              <a
-                href={EXTERNAL_LINKS.FACEBOOK_FANPAGE}
-                target="_blank"
-                rel="noopener noreferrer"
+              {/* Cards (Wellbeing Messages) */}
+              <Link
+                to={ROUTES.CARDS}
                 className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-rose-200 transition-all duration-300 hover:-translate-y-1"
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-rose-100 to-pink-100 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500" />
@@ -242,16 +240,16 @@ export default function Home() {
                   <div className="w-14 h-14 bg-gradient-to-br from-rose-500 to-pink-500 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
                     <Heart size={28} className="fill-current" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Bức Thư Chiều Thứ 6</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Cards</h3>
                   <p className="text-sm text-gray-500 mb-4">
-                    Truy cập fanpage để đọc các bức thư
+                    Thông điệp an lành dành cho bạn
                   </p>
                   <div className="flex items-center gap-2 text-xs text-rose-600">
                     <Star size={14} className="fill-current" />
                     Yêu thương luôn
                   </div>
                 </div>
-              </a>
+              </Link>
             </div>
           </section>
 
