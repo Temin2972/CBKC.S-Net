@@ -33,6 +33,7 @@ export default function Profile() {
   const [displayName, setDisplayName] = useState('')
   const [selectedAvatar, setSelectedAvatar] = useState('')
   const [bio, setBio] = useState('')
+  const [specialty, setSpecialty] = useState('')
 
   useEffect(() => {
     if (user) {
@@ -45,6 +46,7 @@ export default function Profile() {
       setDisplayName(user.user_metadata?.full_name || '')
       setSelectedAvatar(user.user_metadata?.avatar_url || AVATAR_PRESETS[0].url)
       setBio(user.user_metadata?.bio || '')
+      setSpecialty(user.user_metadata?.specialty || '')
     } else {
       // First try to get from users table
       const { data } = await supabase
@@ -57,11 +59,13 @@ export default function Profile() {
         setDisplayName(data.full_name || user.user_metadata?.full_name || '')
         setSelectedAvatar(data.avatar_url || user.user_metadata?.avatar_url || AVATAR_PRESETS[0].url)
         setBio(data.bio || '')
+        setSpecialty(data.specialty || '')
       } else {
         // Fallback to user metadata from auth
         setDisplayName(user.user_metadata?.full_name || '')
         setSelectedAvatar(user.user_metadata?.avatar_url || AVATAR_PRESETS[0].url)
         setBio(user.user_metadata?.bio || '')
+        setSpecialty(user.user_metadata?.specialty || '')
       }
     }
   }
@@ -119,6 +123,7 @@ export default function Profile() {
         full_name: displayName,
         avatar_url: selectedAvatar,
         bio,
+        specialty,
         updated_at: new Date().toISOString()
       }
 
@@ -346,6 +351,22 @@ export default function Profile() {
             />
           </div>
 
+          {/* Specialty (for counselors) */}
+          {(isCounselor || isAdmin) && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Chuyên môn
+              </label>
+              <input
+                type="text"
+                value={specialty}
+                onChange={(e) => setSpecialty(e.target.value)}
+                placeholder="VD: Tư vấn tâm lý học đường, Hỗ trợ stress..."
+                className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none"
+              />
+            </div>
+          )}
+
           {/* Bio (for counselors) */}
           {(isCounselor || isAdmin) && (
             <div className="mb-6">
@@ -355,7 +376,7 @@ export default function Profile() {
               <textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Chia sẻ về chuyên môn, kinh nghiệm của bạn..."
+                placeholder="Chia sẻ về kinh nghiệm, phương pháp tư vấn của bạn..."
                 className="w-full p-4 rounded-xl bg-gray-50 border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none resize-none h-32"
               />
             </div>
