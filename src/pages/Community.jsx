@@ -358,12 +358,14 @@ export default function Community() {
   }
 
   return (
-    <div className="min-h-screen bg-animated-gradient relative overflow-hidden">
-      {/* Floating Orbs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="floating-orb floating-orb-1"></div>
-        <div className="floating-orb floating-orb-2"></div>
-        <div className="floating-orb floating-orb-3"></div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background Image */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/images/doms.jpg')" }}
+      >
+        {/* Overlay for readability */}
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"></div>
       </div>
       
       <div className="relative z-10">
@@ -408,13 +410,26 @@ export default function Community() {
               {Object.entries(TOPIC_LABELS).map(([topic, label]) => {
                 const Icon = TOPIC_ICONS[topic]
                 const isActive = topicFilter === topic
+                
+                // Different gradients for each topic
+                const getActiveGradient = () => {
+                  switch (topic) {
+                    case POST_TOPICS.MENTAL:
+                      return 'bg-gradient-to-r from-violet-500 to-purple-500'
+                    case POST_TOPICS.OTHERS:
+                      return 'bg-gradient-to-r from-orange-400 to-orange-500'
+                    default: // ALL
+                      return 'bg-gradient-to-r from-purple-500 to-pink-500'
+                  }
+                }
+                
                 return (
                   <button
                     key={topic}
                     onClick={() => setTopicFilter(topic)}
                     className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                       isActive
-                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md'
+                        ? `${getActiveGradient()} text-white shadow-md`
                         : 'text-gray-600 hover:bg-gray-100'
                     }`}
                   >

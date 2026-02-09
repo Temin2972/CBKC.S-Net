@@ -84,11 +84,12 @@ export default function CounselorSelector({
                     : 'border-gray-200 bg-white hover:border-purple-300'
                 }`}
               >
-                <button
-                  onClick={() => handleSelect(counselor)}
-                  className="w-full text-left group"
-                >
-                  <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4">
+                  {/* Selectable area */}
+                  <button
+                    onClick={() => handleSelect(counselor)}
+                    className="flex-1 flex items-center gap-4 text-left group"
+                  >
                     {/* Avatar with online indicator */}
                     <div className="relative">
                       {counselor.avatar_url ? (
@@ -111,49 +112,49 @@ export default function CounselorSelector({
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-semibold text-gray-800 truncate">
-                        {counselor.displayName}
-                      </h4>
-                      {counselor.role === 'admin' && (
-                        <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-semibold rounded-full">
-                          Admin
-                        </span>
-                      )}
-                      {online && (
-                        <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-                          Online
-                        </span>
+                        <h4 className="font-semibold text-gray-800 truncate">
+                          {counselor.displayName}
+                        </h4>
+                        {counselor.role === 'admin' && (
+                          <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-semibold rounded-full">
+                            Admin
+                          </span>
+                        )}
+                        {online && (
+                          <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                            Online
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {counselor.description}
+                      </p>
+                    </div>
+
+                    {/* Check Mark */}
+                    <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                      selectedCounselor?.id === counselor.id
+                        ? 'border-purple-500 bg-purple-500'
+                        : 'border-gray-300 group-hover:border-purple-300'
+                    }`}>
+                      {selectedCounselor?.id === counselor.id && (
+                        <Check size={16} className="text-white" />
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {counselor.description}
-                    </p>
-                  </div>
-
-                  {/* Check Mark */}
-                  <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                    selectedCounselor?.id === counselor.id
-                      ? 'border-purple-500 bg-purple-500'
-                      : 'border-gray-300 group-hover:border-purple-300'
-                  }`}>
-                    {selectedCounselor?.id === counselor.id && (
-                      <Check size={16} className="text-white" />
-                    )}
-                  </div>
-                </div>
-                </button>
+                  </button>
                 
-                {/* View Profile Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setViewingProfile(counselor)
-                  }}
-                  className="mt-2 w-full py-2 text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors flex items-center justify-center gap-1"
-                >
-                  <Info size={14} />
-                  Xem hồ sơ
-                </button>
+                  {/* View Profile Button - Right side */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setViewingProfile(counselor)
+                    }}
+                    className="flex-shrink-0 px-3 py-2 text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-100 rounded-lg transition-colors flex items-center gap-1"
+                  >
+                    <Info size={14} />
+                    Xem hồ sơ
+                  </button>
+                </div>
               </div>
             )
           })

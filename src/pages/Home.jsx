@@ -157,11 +157,6 @@ export default function Home() {
 
           {/* Main Feature Cards */}
           <section className="mb-12">
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <Sparkles className="text-indigo-500" size={24} />
-              Dịch vụ chính
-            </h2>
-
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Chat Card */}
               <Link
@@ -257,18 +252,13 @@ export default function Home() {
           {!quoteLoading && quote && (
             <section className="mb-12">
               <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-8 border border-indigo-100">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-2xl">💭</span>
-                  </div>
-                  <div>
-                    <p className="text-lg text-gray-700 italic leading-relaxed mb-3">
-                      "{quote.content}"
-                    </p>
-                    {quote.author && (
-                      <p className="text-sm text-indigo-600 font-medium">— {quote.author}</p>
-                    )}
-                  </div>
+                <div>
+                  <p className="text-lg text-gray-700 italic leading-relaxed mb-3">
+                    "{quote.content}"
+                  </p>
+                  {quote.author && (
+                    <p className="text-sm text-indigo-600 font-medium">— {quote.author}</p>
+                  )}
                 </div>
               </div>
             </section>
@@ -277,11 +267,6 @@ export default function Home() {
           {/* Counselor-only Sections */}
           {isCounselor && (
             <section className="space-y-8">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <BookOpen className="text-indigo-500" size={24} />
-                Công cụ tư vấn viên
-              </h2>
-
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                   <CautionSection />
