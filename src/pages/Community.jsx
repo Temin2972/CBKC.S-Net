@@ -496,26 +496,26 @@ export default function Community() {
                     <button
                       type="button"
                       onClick={() => setPostTopic(POST_TOPICS.MENTAL)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all duration-300 ${
                         postTopic === POST_TOPICS.MENTAL
                           ? 'border-purple-500 bg-purple-50 text-purple-700'
                           : 'border-gray-200 hover:border-gray-300 text-gray-600'
                       }`}
                     >
                       <Brain size={18} />
-                      Tâm lý
+                      Tâm sự
                     </button>
                     <button
                       type="button"
                       onClick={() => setPostTopic(POST_TOPICS.OTHERS)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all duration-300 ${
                         postTopic === POST_TOPICS.OTHERS
                           ? 'border-orange-500 bg-orange-50 text-orange-700'
                           : 'border-gray-200 hover:border-gray-300 text-gray-600'
                       }`}
                     >
                       <Coffee size={18} />
-                      Ngoài lề
+                      Đời sống
                     </button>
                   </div>
                 </div>
@@ -638,7 +638,7 @@ export default function Community() {
                               : 'bg-orange-100 text-orange-700'
                           }`}>
                             {post.topic === POST_TOPICS.MENTAL ? <Brain size={12} /> : <Coffee size={12} />}
-                            {TOPIC_LABELS[post.topic] || 'Tâm lý'}
+                            {TOPIC_LABELS[post.topic] || 'Tâm sự'}
                           </span>
                         </div>
                         <p className="text-sm text-gray-500">

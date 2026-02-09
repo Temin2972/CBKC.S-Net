@@ -231,7 +231,7 @@ export default function PendingSection() {
                             : 'bg-orange-100 text-orange-700'
                         }`}>
                           {getItemTopic(item) === POST_TOPICS.MENTAL ? <Brain size={10} /> : <Coffee size={10} />}
-                          {TOPIC_CONFIG[getItemTopic(item)]?.label || 'Tâm lý'}
+                          {TOPIC_CONFIG[getItemTopic(item)]?.label || 'Tâm sự'}
                         </span>
                       )}
                       <span>{formatTime(item.created_at)}</span>

@@ -136,7 +136,7 @@ export default function Home() {
             <div className="mb-8 animate-pulse">
               <Link
                 to={ROUTES.CHAT}
-                className="flex items-center gap-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl hover:shadow-lg transition-all"
+                className="flex items-center gap-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl hover:from-amber-100 hover:to-orange-100 hover:border-amber-300 hover:shadow-xl transition-all duration-500 ease-out"
               >
                 <div className="relative">
                   <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-400 rounded-xl flex items-center justify-center text-white">
@@ -162,23 +162,23 @@ export default function Home() {
               {/* Chat Card */}
               <Link
                 to={ROUTES.CHAT}
-                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-indigo-200 transition-all duration-300 hover:-translate-y-1"
+                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:bg-gradient-to-br hover:from-blue-500 hover:to-indigo-600 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:scale-150 transition-all duration-500" />
                 <div className="relative z-10">
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 group-hover:from-white/20 group-hover:to-white/10 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-all duration-500">
                     <MessageCircle size={28} />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">
-                    {isCounselor ? 'Phòng Tư vấn' : 'Chat Tâm lý'}
+                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-white mb-2 transition-colors duration-500">
+                    {isCounselor ? 'Phòng Tư vấn' : 'Chat Tâm sự'}
                   </h3>
-                  <p className="text-sm text-gray-500 mb-4">
+                  <p className="text-sm text-gray-500 group-hover:text-white/80 mb-4 transition-colors duration-500">
                     {isCounselor
                       ? 'Xem và trả lời các yêu cầu tư vấn'
                       : 'Kết nối với tư vấn viên ngay'}
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-emerald-600">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                  <div className="flex items-center gap-2 text-xs text-emerald-600 group-hover:text-emerald-300 transition-colors duration-500">
+                    <span className="w-2 h-2 bg-emerald-500 group-hover:bg-emerald-300 rounded-full animate-pulse transition-colors duration-500" />
                     Đang hoạt động
                   </div>
                 </div>
@@ -187,18 +187,18 @@ export default function Home() {
               {/* Community Card */}
               <Link
                 to={ROUTES.COMMUNITY}
-                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-purple-200 transition-all duration-300 hover:-translate-y-1"
+                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:bg-gradient-to-br hover:from-purple-500 hover:to-pink-500 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:scale-150 transition-all duration-500" />
                 <div className="relative z-10">
-                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-white/20 group-hover:to-white/10 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-all duration-500">
                     <Users size={28} />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Cộng đồng Ẩn danh</h3>
-                  <p className="text-sm text-gray-500 mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-white mb-2 transition-colors duration-500">Cộng đồng Ẩn danh</h3>
+                  <p className="text-sm text-gray-500 group-hover:text-white/80 mb-4 transition-colors duration-500">
                     Chia sẻ câu chuyện với sự ẩn danh hoàn toàn
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-purple-600">
+                  <div className="flex items-center gap-2 text-xs text-purple-600 group-hover:text-purple-200 transition-colors duration-500">
                     <Shield size={14} />
                     Bảo mật 100%
                   </div>
@@ -208,18 +208,18 @@ export default function Home() {
               {/* Booking Card */}
               <Link
                 to={ROUTES.BOOKING}
-                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-teal-200 transition-all duration-300 hover:-translate-y-1"
+                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:bg-gradient-to-br hover:from-teal-500 hover:to-emerald-500 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-teal-100 to-emerald-100 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-teal-100 to-emerald-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:scale-150 transition-all duration-500" />
                 <div className="relative z-10">
-                  <div className="w-14 h-14 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                  <div className="w-14 h-14 bg-gradient-to-br from-teal-500 to-emerald-500 group-hover:from-white/20 group-hover:to-white/10 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-all duration-500">
                     <CalendarClock size={28} />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Đặt lịch hẹn</h3>
-                  <p className="text-sm text-gray-500 mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-white mb-2 transition-colors duration-500">Đặt lịch hẹn</h3>
+                  <p className="text-sm text-gray-500 group-hover:text-white/80 mb-4 transition-colors duration-500">
                     {isCounselor ? 'Xem các lịch hẹn của học sinh' : 'Đặt lịch gặp tư vấn viên trực tiếp'}
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-teal-600">
+                  <div className="flex items-center gap-2 text-xs text-teal-600 group-hover:text-teal-200 transition-colors duration-500">
                     <Clock size={14} />
                     {OPERATING_HOURS.DISPLAY}
                   </div>
@@ -229,18 +229,18 @@ export default function Home() {
               {/* Cards (Wellbeing Messages) */}
               <Link
                 to={ROUTES.CARDS}
-                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-rose-200 transition-all duration-300 hover:-translate-y-1"
+                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:bg-gradient-to-br hover:from-rose-500 hover:to-pink-500 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-rose-100 to-pink-100 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-rose-100 to-pink-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:scale-150 transition-all duration-500" />
                 <div className="relative z-10">
-                  <div className="w-14 h-14 bg-gradient-to-br from-rose-500 to-pink-500 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                  <div className="w-14 h-14 bg-gradient-to-br from-rose-500 to-pink-500 group-hover:from-white/20 group-hover:to-white/10 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-all duration-500">
                     <Heart size={28} className="fill-current" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Cards</h3>
-                  <p className="text-sm text-gray-500 mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-white mb-2 transition-colors duration-500">Cards</h3>
+                  <p className="text-sm text-gray-500 group-hover:text-white/80 mb-4 transition-colors duration-500">
                     Thông điệp an lành dành cho bạn
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-rose-600">
+                  <div className="flex items-center gap-2 text-xs text-rose-600 group-hover:text-rose-200 transition-colors duration-500">
                     <Star size={14} className="fill-current" />
                     Yêu thương luôn
                   </div>
@@ -252,9 +252,9 @@ export default function Home() {
           {/* Daily Quote */}
           {!quoteLoading && quote && (
             <section className="mb-12">
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-8 border border-indigo-100">
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-8 border border-indigo-100 transition-all duration-500 hover:shadow-lg hover:scale-[1.01]">
                 <div>
-                  <p className="text-lg text-gray-700 italic leading-relaxed mb-3">
+                  <p className="text-lg text-gray-700 leading-relaxed mb-3">
                     "{quote.content}"
                   </p>
                   {quote.author && (

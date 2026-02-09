@@ -60,8 +60,8 @@ export const POST_TOPICS = {
 
 export const TOPIC_LABELS = {
   [POST_TOPICS.ALL]: 'Tất cả',
-  [POST_TOPICS.MENTAL]: 'Tâm lý',
-  [POST_TOPICS.OTHERS]: 'Ngoài lề',
+  [POST_TOPICS.MENTAL]: 'Tâm sự',
+  [POST_TOPICS.OTHERS]: 'Đời sống',
 }
 
 // Password validation
