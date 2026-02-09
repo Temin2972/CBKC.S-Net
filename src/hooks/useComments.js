@@ -74,18 +74,22 @@ export function useComments(postId, currentUserId) {
         return
       }
 
-      // Get unique author IDs
-      const authorIds = [...new Set(commentsData.map(c => c.author_id))]
+      // Get unique author IDs (filter out null for anonymous comments)
+      const authorIds = [...new Set(commentsData.map(c => c.author_id).filter(id => id !== null))]
       console.log('Fetching authors:', authorIds)
       
-      // Fetch all authors in one query
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('id, full_name, role')
-        .in('id', authorIds)
+      // Fetch all authors in one query (only if there are non-anonymous comments)
+      let usersData = []
+      if (authorIds.length > 0) {
+        const { data, error: usersError } = await supabase
+          .from('users')
+          .select('id, full_name, role')
+          .in('id', authorIds)
 
-      if (usersError) {
-        console.error('Error fetching users:', usersError)
+        if (usersError) {
+          console.error('Error fetching users:', usersError)
+        }
+        usersData = data || []
       }
 
       // Map authors to comments
