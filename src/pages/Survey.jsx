@@ -735,10 +735,12 @@ export default function Survey() {
                               Hạn: {new Date(survey.deadline).toLocaleDateString('vi-VN')}
                             </span>
                           )}
-                          <span className="flex items-center gap-1">
-                            <BarChart3 size={14} />
-                            {survey.responses_count || 0} lượt tham gia
-                          </span>
+                          {survey.questions?.length > 0 && (
+                            <span className="flex items-center gap-1">
+                              <ClipboardList size={14} />
+                              {survey.questions.length} câu hỏi
+                            </span>
+                          )}
                         </div>
                       </div>
                       <ChevronRight size={20} className="text-gray-400 group-hover:text-teal-500 group-hover:translate-x-1 transition-all" />
