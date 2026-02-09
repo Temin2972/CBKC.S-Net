@@ -11,15 +11,15 @@ CREATE TABLE IF NOT EXISTS appointment_requests (
     student_id UUID REFERENCES auth.users(id), -- NULL if guest
     full_name TEXT NOT NULL,
     email TEXT NOT NULL,
-    class_name TEXT,
-    dorm_room TEXT,
+    class_name TEXT NOT NULL, -- Required: student's class
+    dorm_room TEXT NOT NULL, -- Required: dorm room number
     
     -- Booking details
     time_slot TEXT NOT NULL, -- 'monday_11', 'tuesday_11', etc. or 'other:custom text'
     time_slot_display TEXT, -- Human readable: 'Thứ 2, 11h-12h'
-    issues TEXT NOT NULL, -- Student's description of issues
+    issues TEXT, -- Optional: Student's description of issues (used for AI urgency analysis)
     
-    -- AI Classification
+    -- AI Classification (based on issues field if provided)
     urgency_level INT DEFAULT 0, -- 0-3, classified by AI
     ai_analysis TEXT, -- AI's reasoning
     

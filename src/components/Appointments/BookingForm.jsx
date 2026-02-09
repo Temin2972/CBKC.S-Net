@@ -43,16 +43,20 @@ export default function BookingForm({ userId = null, onSuccess }) {
             setError('Vui lòng nhập email hợp lệ')
             return
         }
+        if (!formData.class_name.trim()) {
+            setError('Vui lòng nhập lớp')
+            return
+        }
+        if (!formData.dorm_room.trim()) {
+            setError('Vui lòng nhập phòng KTX')
+            return
+        }
         if (!formData.time_slot) {
             setError('Vui lòng chọn khung giờ')
             return
         }
         if (formData.time_slot === 'other' && !formData.custom_time_slot.trim()) {
             setError('Vui lòng nhập khung giờ mong muốn')
-            return
-        }
-        if (!formData.issues.trim() || formData.issues.length < 10) {
-            setError('Vui lòng mô tả chi tiết vấn đề cần tư vấn (ít nhất 10 ký tự)')
             return
         }
 
@@ -168,7 +172,7 @@ export default function BookingForm({ userId = null, onSuccess }) {
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Lớp
+                            Lớp <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
@@ -180,7 +184,7 @@ export default function BookingForm({ userId = null, onSuccess }) {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Phòng KTX
+                            Phòng KTX <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                             <Home size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -238,7 +242,7 @@ export default function BookingForm({ userId = null, onSuccess }) {
                 {/* Issues */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Những khó khăn cần tư vấn <span className="text-red-500">*</span>
+                        Những khó khăn cần tư vấn <span className="text-gray-400">(tùy chọn)</span>
                     </label>
                     <div className="relative">
                         <MessageSquare size={18} className="absolute left-3 top-3 text-gray-400" />

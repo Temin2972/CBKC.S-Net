@@ -98,8 +98,14 @@ export function useAppointments(userRole = null) {
                 timeSlotDisplay = slot?.label || formData.time_slot
             }
 
-            // Analyze urgency with AI
-            const { urgencyLevel, reasoning } = await analyzeAppointmentUrgency(formData.issues)
+            // Analyze urgency with AI (only if issues provided)
+            let urgencyLevel = 0
+            let reasoning = ''
+            if (formData.issues && formData.issues.trim()) {
+                const analysis = await analyzeAppointmentUrgency(formData.issues)
+                urgencyLevel = analysis.urgencyLevel
+                reasoning = analysis.reasoning
+            }
 
             // Insert appointment
             const { data, error } = await supabase
@@ -108,13 +114,13 @@ export function useAppointments(userRole = null) {
                     student_id: userId || null,
                     full_name: formData.full_name,
                     email: formData.email,
-                    class_name: formData.class_name || null,
-                    dorm_room: formData.dorm_room || null,
+                    class_name: formData.class_name,
+                    dorm_room: formData.dorm_room,
                     time_slot: formData.time_slot === 'other' ? `other:${formData.custom_time_slot}` : formData.time_slot,
                     time_slot_display: timeSlotDisplay,
-                    issues: formData.issues,
+                    issues: formData.issues || null,
                     urgency_level: urgencyLevel,
-                    ai_analysis: reasoning,
+                    ai_analysis: reasoning || null,
                     status: APPOINTMENT_STATUS.PENDING
                 })
                 .select()

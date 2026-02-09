@@ -82,7 +82,7 @@ export default function Booking() {
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid lg:grid-cols-3 gap-4">
             {/* Left Column - Info Cards */}
             <div className="lg:col-span-1 space-y-6">
               {/* Working Hours Card */}
