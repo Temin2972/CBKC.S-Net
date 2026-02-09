@@ -52,21 +52,32 @@ export function useChatRoom(userId, userRole) {
 
   const fetchStudentChatRoom = async () => {
     try {
-      const { data, error } = await supabase
+      // First get the chat room
+      const { data: roomData, error: roomError } = await supabase
         .from('chat_rooms')
-        .select(`
-          *,
-          counselor:users!chat_rooms_counselor_id_fkey(id, full_name, role)
-        `)
+        .select('*')
         .eq('student_id', userId)
         .single()
 
-      if (error && error.code !== 'PGRST116') {
+      if (roomError && roomError.code !== 'PGRST116') {
         // PGRST116 = no rows found, which is okay
-        console.error('Error fetching chat room:', error)
-        setError(error)
+        console.error('Error fetching chat room:', roomError)
+        setError(roomError)
+        setLoading(false)
+        return
+      }
+
+      // If room has a counselor, fetch counselor info separately
+      if (roomData?.counselor_id) {
+        const { data: counselorData } = await supabase
+          .from('users')
+          .select('id, full_name, role')
+          .eq('id', roomData.counselor_id)
+          .single()
+        
+        setChatRoom({ ...roomData, counselor: counselorData })
       } else {
-        setChatRoom(data)
+        setChatRoom(roomData)
       }
     } catch (err) {
       console.error('Exception fetching chat room:', err)
