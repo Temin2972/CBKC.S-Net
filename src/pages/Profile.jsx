@@ -19,7 +19,12 @@ import {
   Shield,
   Upload,
   Loader2,
-  X
+  X,
+  Lock,
+  Eye,
+  EyeOff,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react'
 
 export default function Profile() {
@@ -34,6 +39,18 @@ export default function Profile() {
   const [selectedAvatar, setSelectedAvatar] = useState('')
   const [bio, setBio] = useState('')
   const [specialty, setSpecialty] = useState('')
+  
+  // Password change state
+  const [showPasswordSection, setShowPasswordSection] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -162,6 +179,87 @@ export default function Profile() {
       setError('Có lỗi xảy ra. Vui lòng thử lại.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleChangePassword = async () => {
+    setPasswordError('')
+    setPasswordSuccess(false)
+
+    // Validation
+    if (!currentPassword) {
+      setPasswordError('Vui lòng nhập mật khẩu hiện tại')
+      return
+    }
+    if (!newPassword) {
+      setPasswordError('Vui lòng nhập mật khẩu mới')
+      return
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('Mật khẩu mới phải có ít nhất 6 ký tự')
+      return
+    }
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('Mật khẩu xác nhận không khớp')
+      return
+    }
+    if (currentPassword === newPassword) {
+      setPasswordError('Mật khẩu mới phải khác mật khẩu hiện tại')
+      return
+    }
+
+    setPasswordLoading(true)
+
+    try {
+      if (isDemoMode) {
+        // Simulate password change in demo mode
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        setPasswordSuccess(true)
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmNewPassword('')
+        setTimeout(() => {
+          setPasswordSuccess(false)
+          setShowPasswordSection(false)
+        }, 2000)
+      } else {
+        // First verify current password by trying to sign in
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: currentPassword
+        })
+
+        if (signInError) {
+          setPasswordError('Mật khẩu hiện tại không đúng')
+          setPasswordLoading(false)
+          return
+        }
+
+        // Update to new password
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: newPassword
+        })
+
+        if (updateError) {
+          setPasswordError('Không thể đổi mật khẩu. Vui lòng thử lại.')
+          setPasswordLoading(false)
+          return
+        }
+
+        setPasswordSuccess(true)
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmNewPassword('')
+        setTimeout(() => {
+          setPasswordSuccess(false)
+          setShowPasswordSection(false)
+        }, 2000)
+      }
+    } catch (err) {
+      console.error('Password change error:', err)
+      setPasswordError('Có lỗi xảy ra. Vui lòng thử lại.')
+    } finally {
+      setPasswordLoading(false)
     }
   }
 
@@ -393,6 +491,130 @@ export default function Profile() {
           >
             Lưu thay đổi
           </Button>
+        </div>
+
+        {/* Password Change Section */}
+        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-xl overflow-hidden mb-6">
+          <button
+            onClick={() => {
+              setShowPasswordSection(!showPasswordSection)
+              setPasswordError('')
+              setPasswordSuccess(false)
+            }}
+            className="w-full flex items-center justify-between p-6 hover:bg-gray-50/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                <Lock size={20} className="text-amber-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold text-gray-800">Đổi mật khẩu</h3>
+                <p className="text-sm text-gray-500">Cập nhật mật khẩu tài khoản của bạn</p>
+              </div>
+            </div>
+            {showPasswordSection ? (
+              <ChevronUp size={20} className="text-gray-400" />
+            ) : (
+              <ChevronDown size={20} className="text-gray-400" />
+            )}
+          </button>
+
+          {showPasswordSection && (
+            <div className="px-6 pb-6 border-t border-gray-100">
+              <div className="pt-4 space-y-4">
+                {passwordError && (
+                  <Alert variant="error">{passwordError}</Alert>
+                )}
+                {passwordSuccess && (
+                  <Alert variant="success">
+                    <Check size={16} className="inline mr-2" />
+                    Đổi mật khẩu thành công!
+                  </Alert>
+                )}
+
+                {/* Current Password */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mật khẩu hiện tại
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showCurrentPassword ? 'text' : 'password'}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Nhập mật khẩu hiện tại"
+                      className="w-full p-3 pr-12 rounded-xl bg-gray-50 border border-gray-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showCurrentPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* New Password */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mật khẩu mới
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)"
+                      className="w-full p-3 pr-12 rounded-xl bg-gray-50 border border-gray-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm New Password */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Xác nhận mật khẩu mới
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      placeholder="Nhập lại mật khẩu mới"
+                      className="w-full p-3 pr-12 rounded-xl bg-gray-50 border border-gray-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Change Password Button */}
+                <Button
+                  onClick={handleChangePassword}
+                  loading={passwordLoading}
+                  disabled={passwordLoading || !currentPassword || !newPassword || !confirmNewPassword}
+                  variant="primary"
+                  className="w-full bg-amber-500 hover:bg-amber-600"
+                  icon={Lock}
+                >
+                  Đổi mật khẩu
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Demo Mode Info */}
