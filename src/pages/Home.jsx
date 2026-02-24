@@ -236,9 +236,9 @@ export default function Home() {
                   <div className="w-14 h-14 bg-gradient-to-br from-rose-500 to-pink-500 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-all duration-500">
                     <Heart size={28} className="fill-current" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 transition-colors duration-500">Cards</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2 transition-colors duration-500">Kiến thức</h3>
                   <p className="text-sm text-gray-500 mb-4 transition-colors duration-500">
-                    Thông điệp an lành dành cho bạn
+                    Thông điệp mỗi ngày
                   </p>
                   <div className="flex items-center gap-2 text-xs text-rose-600 transition-colors duration-500">
                     <Star size={14} className="fill-current" />
