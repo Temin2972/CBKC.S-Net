@@ -11,12 +11,41 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [dbRole, setDbRole] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  // Fetch role from database (more reliable than auth metadata)
+  const fetchUserRole = useCallback(async (userId) => {
+    if (!userId) {
+      setDbRole(null)
+      return
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .single()
+      
+      if (error) {
+        console.error('Error fetching user role:', error)
+        return
+      }
+      
+      setDbRole(data?.role || null)
+    } catch (err) {
+      console.error('Error fetching user role:', err)
+    }
+  }, [])
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
+      if (session?.user) {
+        fetchUserRole(session.user.id)
+      }
       setLoading(false)
     })
 
@@ -25,10 +54,15 @@ export function AuthProvider({ children }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      if (session?.user) {
+        fetchUserRole(session.user.id)
+      } else {
+        setDbRole(null)
+      }
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [fetchUserRole])
 
   /**
    * Sign up as a student with username or email
@@ -124,22 +158,25 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // Memoized user info helpers
+  // Memoized user info helpers - prefer dbRole from database over auth metadata
   const userInfo = useMemo(
-    () => ({
-      id: user?.id,
-      email: user?.email,
-      role: user?.user_metadata?.role,
-      fullName: user?.user_metadata?.full_name,
-      username: user?.user_metadata?.username,
-      avatar: user?.user_metadata?.avatar_url,
-      isCounselor:
-        user?.user_metadata?.role === USER_ROLES.COUNSELOR ||
-        user?.user_metadata?.role === USER_ROLES.ADMIN,
-      isAdmin: user?.user_metadata?.role === USER_ROLES.ADMIN,
-      isStudent: user?.user_metadata?.role === USER_ROLES.STUDENT,
-    }),
-    [user]
+    () => {
+      const role = dbRole || user?.user_metadata?.role
+      return {
+        id: user?.id,
+        email: user?.email,
+        role,
+        fullName: user?.user_metadata?.full_name,
+        username: user?.user_metadata?.username,
+        avatar: user?.user_metadata?.avatar_url,
+        isCounselor:
+          role === USER_ROLES.COUNSELOR ||
+          role === USER_ROLES.ADMIN,
+        isAdmin: role === USER_ROLES.ADMIN,
+        isStudent: role === USER_ROLES.STUDENT || !role,
+      }
+    },
+    [user, dbRole]
   )
 
   const value = useMemo(
