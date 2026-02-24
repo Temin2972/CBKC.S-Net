@@ -10,17 +10,16 @@ import UrgencySelector from '../components/Chat/UrgencySelector'
 import CounseledToggle from '../components/Chat/CounseledToggle'
 import StudentNotesPanel from '../components/Chat/StudentNotesPanel'
 import { supabase } from '../lib/supabaseClient'
-import { MessageCircle, Users, Clock, EyeOff, Eye, Shield, AlertTriangle, StickyNote, CheckCircle2 } from 'lucide-react'
+import { MessageCircle, Clock, EyeOff, Shield, AlertTriangle, CheckCircle2 } from 'lucide-react'
 
 // Background image - Library THPT FPT
 const CHAT_BG = '/images/library.jpg'
 
 export default function CounselorChat() {
-  const { user } = useAuth()
+  const { user, role } = useAuth()
   const { roomId } = useParams() // Get roomId from URL if present
-  const { allChatRooms, loading } = useChatRoom(user?.id, user?.user_metadata?.role)
+  const { allChatRooms, loading } = useChatRoom(user?.id, role)
   const [selectedRoom, setSelectedRoom] = useState(null)
-  const [showNotes, setShowNotes] = useState(false)
   
   // Broadcast online status để students thấy
   useBroadcastOnline(user?.id)
@@ -113,17 +112,17 @@ export default function CounselorChat() {
       <div className="relative z-10">
         <Navbar />
 
-        <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-3">
+        <div className="max-w-[1600px] mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-white mb-2">
             Phòng Tư vấn
           </h1>
-          <p className="text-white/90 text-lg">
+          <p className="text-white/90">
             Quản lý và trả lời các yêu cầu tư vấn từ học sinh
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {/* Chat Room List */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -139,7 +138,7 @@ export default function CounselorChat() {
                     </span>
                   </div>
                 </div>
-                {user?.user_metadata?.role === 'counselor' && (
+                {role === 'counselor' && (
                   <p className="text-white/80 text-xs mt-1">
                     Hiển thị chat chung và chat riêng của bạn
                   </p>
@@ -311,19 +310,6 @@ export default function CounselorChat() {
                         }
                       </p>
                     </div>
-                    
-                    {/* Notes Toggle Button */}
-                    <button
-                      onClick={() => setShowNotes(!showNotes)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        showNotes 
-                          ? 'bg-white text-purple-600' 
-                          : 'bg-white/20 text-white hover:bg-white/30'
-                      }`}
-                      title={showNotes ? 'Ẩn ghi chú' : 'Xem ghi chú học sinh'}
-                    >
-                      <StickyNote size={20} />
-                    </button>
                   </div>
                 </div>
 
@@ -403,7 +389,7 @@ export default function CounselorChat() {
                 </div>
 
                 {/* Privacy Notice for shared private rooms (admin only) */}
-                {isPrivateRoom(selectedRoom) && !isMyPrivateRoom(selectedRoom) && user?.user_metadata?.role === 'admin' && (
+                {isPrivateRoom(selectedRoom) && !isMyPrivateRoom(selectedRoom) && role === 'admin' && (
                   <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-3">
                     <div className="flex items-center gap-2 text-sm text-yellow-800">
                       <Shield size={16} />
@@ -414,72 +400,28 @@ export default function CounselorChat() {
                   </div>
                 )}
 
-                {/* Chat Interface with Notes Panel */}
-                <div className="flex flex-1 overflow-hidden">
-                  {/* Chat Area */}
-                  <div className="flex-1 flex flex-col">
-                    <ChatInterface chatRoom={selectedRoom} currentUser={user} />
-                  </div>
-                  
-                  {/* Notes Panel */}
-                  {showNotes && selectedRoom?.student_id && (
-                    <div className="w-80 border-l flex flex-col bg-white">
-                      <StudentNotesPanel
-                        studentId={selectedRoom.student_id}
-                        studentName={getStudentName(selectedRoom)}
-                        counselorId={user?.id}
-                        defaultCollapsed={false}
-                        onClose={() => setShowNotes(false)}
-                        inline={true}
-                      />
-                    </div>
-                  )}
+                {/* Chat Interface - Full width without embedded notes */}
+                <div className="flex-1 flex flex-col">
+                  <ChatInterface chatRoom={selectedRoom} currentUser={user} />
                 </div>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Info Card */}
-        <div className="mt-6 bg-white/90 rounded-2xl p-6 shadow-lg">
-          <h3 className="font-semibold text-gray-800 mb-3">
-            📋 Hướng dẫn cho tư vấn viên
-          </h3>
-          <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600">
-            <div>
-              <p className="font-semibold text-purple-600 mb-2 flex items-center gap-1">
-                <Eye size={16} />
-                Chat chung
-              </p>
-              <ul className="space-y-1">
-                <li>• Tất cả tư vấn viên đều thấy</li>
-                <li>• Phù hợp cho hỗ trợ nhanh</li>
-                <li>• Có thể cùng nhau tư vấn</li>
-              </ul>
+          {/* Notes Panel - Separate column on the right */}
+          {selectedRoom?.student_id && (
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl shadow-xl overflow-hidden h-[calc(100vh-280px)]">
+                <StudentNotesPanel
+                  studentId={selectedRoom.student_id}
+                  studentName={getStudentName(selectedRoom)}
+                  counselorId={user?.id}
+                  defaultCollapsed={false}
+                  inline={true}
+                />
+              </div>
             </div>
-            <div>
-              <p className="font-semibold text-purple-600 mb-2 flex items-center gap-1">
-                <EyeOff size={16} />
-                Chat riêng
-              </p>
-              <ul className="space-y-1">
-                <li>• Chỉ bạn và admin thấy</li>
-                <li>• Học sinh chọn tư vấn viên cụ thể</li>
-                <li>• Đảm bảo riêng tư cao hơn</li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-semibold text-purple-600 mb-2 flex items-center gap-1">
-                <Shield size={16} />
-                Trách nhiệm
-              </p>
-              <ul className="space-y-1">
-                <li>• Trả lời nhanh và chuyên nghiệp</li>
-                <li>• Tôn trọng quyền riêng tư</li>
-                <li>• Lắng nghe và thấu hiểu</li>
-              </ul>
-            </div>
-          </div>
+          )}
         </div>
       </div>
       </div>

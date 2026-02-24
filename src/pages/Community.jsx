@@ -24,7 +24,7 @@ const TOPIC_ICONS = {
 }
 
 export default function Community() {
-  const { user } = useAuth()
+  const { user, role } = useAuth()
   const { posts, loading, createPost, deletePost, toggleLike } = usePosts(user?.id)
   const [newPost, setNewPost] = useState('')
   const [postTopic, setPostTopic] = useState(POST_TOPICS.MENTAL) // Default to mental
@@ -648,8 +648,8 @@ export default function Community() {
                     </div>
 
                     {(user?.id === post.author_id || 
-                      user?.user_metadata?.role === 'admin' || 
-                      user?.user_metadata?.role === 'counselor') && (
+                      role === 'admin' || 
+                      role === 'counselor') && (
                       <button
                         onClick={() => handleDeletePost(post.id)}
                         className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
