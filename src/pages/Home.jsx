@@ -170,7 +170,7 @@ export default function Home() {
                     <MessageCircle size={28} />
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2 transition-colors duration-500">
-                    {isCounselor ? 'Phòng Tư vấn' : 'Chat Tâm sự'}
+                    {isCounselor ? 'Phòng Tư vấn' : 'Tư vấn Tâm lý'}
                   </h3>
                   <p className="text-sm text-gray-500 mb-4 transition-colors duration-500">
                     {isCounselor

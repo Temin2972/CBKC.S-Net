@@ -1,6 +1,5 @@
 /**
  * Navbar Component
- * Clean, professional design for psychological counseling platform
  */
 import { useCallback, useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'

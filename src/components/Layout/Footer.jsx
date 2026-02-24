@@ -1,6 +1,5 @@
 /**
  * Footer Component
- * Contains hotline, address, and links to Info/Contact/Donate pages
  */
 import { Link } from 'react-router-dom'
 import { 
