@@ -65,12 +65,12 @@ export default function ChatInterface({ chatRoom, currentUser }) {
     })
   }, [messages])
 
-  // Save AI assessment to student notes
-  const saveAIAssessmentToNotes = useCallback(async (studentId, assessment) => {
+  // Save AI assessment to student_notes.ai_notes (persists across chat rooms)
+  const saveAINotesToStudent = useCallback(async (studentId, assessment) => {
     if (!studentId || !assessment) return
 
     try {
-      // Format the AI assessment as a note entry
+      // Format the AI assessment
       const timestamp = new Date().toLocaleString('vi-VN')
       const urgencyLabels = {
         0: '🟢 Bình thường',
@@ -85,65 +85,57 @@ export default function ChatInterface({ chatRoom, currentUser }) {
         'high': 'Cao'
       }
 
-      const aiNoteEntry = `
-═══════════════════════════════════════
-🤖 ĐÁNH GIÁ TỰ ĐỘNG BỞI AI - ${timestamp}
-═══════════════════════════════════════
-📊 Mức độ khẩn cấp: ${urgencyLabels[assessment.urgencyLevel] || 'Chưa xác định'}
+      const newAINote = `[${timestamp}]
+📊 Mức độ: ${urgencyLabels[assessment.urgencyLevel] || 'Chưa xác định'}
 ⚠️ Nguy cơ tự hại: ${suicideRiskLabels[assessment.suicideRisk] || 'Không có'}
-${assessment.mainIssues?.length > 0 ? `📋 Vấn đề chính: ${assessment.mainIssues.join(', ')}` : ''}
-${assessment.emotionalState ? `💭 Trạng thái cảm xúc: ${assessment.emotionalState}` : ''}
+${assessment.mainIssues?.length > 0 ? `📋 Vấn đề: ${assessment.mainIssues.join(', ')}` : ''}
+${assessment.emotionalState ? `💭 Cảm xúc: ${assessment.emotionalState}` : ''}
 ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
-───────────────────────────────────────
-⚡ Đây là đánh giá tự động, cần xác nhận bởi tư vấn viên
-═══════════════════════════════════════
+─────────────────────────────
 
 `
 
-      // Try to insert new note first
-      const { data, error } = await supabase
+      // Check if note exists for this student
+      const { data: existingNote } = await supabase
         .from('student_notes')
-        .insert({
-          student_id: studentId,
-          content: aiNoteEntry
-          // updated_by is NULL - allows future AI updates
-        })
-        .select()
+        .select('id, ai_notes')
+        .eq('student_id', studentId)
+        .single()
 
-      if (error) {
-        // If duplicate (note already exists), try to update
-        if (error.code === '23505') { // unique_violation
-          console.log('ℹ️ Note exists, trying to prepend AI assessment...')
-          
-          // Try to update (will only work if updated_by is NULL)
-          const { data: updateData, error: updateError } = await supabase
-            .from('student_notes')
-            .update({
-              content: supabase.sql`${aiNoteEntry} || content`,
-              updated_at: new Date().toISOString()
-              // Keep updated_by as NULL so AI can continue updating
-            })
-            .eq('student_id', studentId)
-            .select()
+      if (existingNote) {
+        // Prepend new note to existing ai_notes
+        const { error: updateError } = await supabase
+          .from('student_notes')
+          .update({
+            ai_notes: newAINote + (existingNote.ai_notes || ''),
+            ai_notes_updated_at: new Date().toISOString()
+          })
+          .eq('student_id', studentId)
 
-          if (updateError) {
-            // RLS blocked - counselor has already updated the note
-            if (updateError.code === '42501') {
-              console.log('ℹ️ Counselor has updated notes, skipping AI assessment')
-            } else {
-              console.error('❌ Error updating AI assessment:', updateError)
-            }
-          } else {
-            console.log('✅ AI assessment prepended to existing notes:', updateData)
-          }
+        if (updateError) {
+          console.error('❌ Error updating AI notes:', updateError)
         } else {
-          console.error('❌ Error saving AI assessment to notes:', error)
+          console.log('✅ AI notes updated for student')
         }
       } else {
-        console.log('✅ AI assessment saved to student notes:', data)
+        // Create new note record
+        const { error: insertError } = await supabase
+          .from('student_notes')
+          .insert({
+            student_id: studentId,
+            ai_notes: newAINote,
+            ai_notes_updated_at: new Date().toISOString(),
+            content: '' // Empty counselor notes
+          })
+
+        if (insertError) {
+          console.error('❌ Error creating AI notes:', insertError)
+        } else {
+          console.log('✅ AI notes created for student')
+        }
       }
     } catch (error) {
-      console.error('❌ Error saving AI assessment to notes:', error)
+      console.error('❌ Error saving AI notes:', error)
     }
   }, [])
 
@@ -219,17 +211,22 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
               .from('chat_rooms')
               .update({
                 urgency_level: assessment.urgencyLevel,
-                ai_assessment: assessment,
+                ai_assessment: {
+                  ...assessment,
+                  assessed_at: new Date().toISOString()
+                },
                 ai_triage_complete: true
               })
               .eq('id', chatRoom.id)
             
             if (updateError) {
               console.error('❌ Error updating chat room assessment:', updateError)
+            } else {
+              console.log('✅ AI assessment saved to chat room')
             }
 
-            // Also save AI assessment to student notes
-            await saveAIAssessmentToNotes(chatRoom.student_id, assessment)
+            // Also save to student_notes.ai_notes for persistent history
+            await saveAINotesToStudent(chatRoom.student_id, assessment)
           }
         }
       }
@@ -238,7 +235,7 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
     }
 
     setAiProcessing(false)
-  }, [chatRoom?.id, chatRoom?.student_id, counselorHasReplied, sendAIMessage, saveAIAssessmentToNotes])
+  }, [chatRoom?.id, chatRoom?.student_id, counselorHasReplied, sendAIMessage, saveAINotesToStudent])
 
   // Start AI timer after student's first message
   const startAITimer = useCallback(() => {

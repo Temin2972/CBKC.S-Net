@@ -134,6 +134,8 @@ export function useStudentNotes(studentId) {
     return {
         notes,
         content: notes?.content || '',
+        aiNotes: notes?.ai_notes || '',
+        aiNotesUpdatedAt: notes?.ai_notes_updated_at,
         loading,
         saving,
         error,
