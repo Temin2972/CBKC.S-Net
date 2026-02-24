@@ -10,7 +10,7 @@ import UrgencySelector from '../components/Chat/UrgencySelector'
 import CounseledToggle from '../components/Chat/CounseledToggle'
 import StudentNotesPanel from '../components/Chat/StudentNotesPanel'
 import { supabase } from '../lib/supabaseClient'
-import { MessageCircle, Clock, EyeOff, Shield, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { MessageCircle, Clock, EyeOff, Eye, Shield, AlertTriangle, CheckCircle2, StickyNote } from 'lucide-react'
 
 // Background image - Library THPT FPT
 const CHAT_BG = '/images/library.jpg'
@@ -18,8 +18,9 @@ const CHAT_BG = '/images/library.jpg'
 export default function CounselorChat() {
   const { user, role } = useAuth()
   const { roomId } = useParams() // Get roomId from URL if present
-  const { allChatRooms, loading } = useChatRoom(user?.id, role)
+  const { allChatRooms, loading, refetch } = useChatRoom(user?.id, role)
   const [selectedRoom, setSelectedRoom] = useState(null)
+  const [showNotes, setShowNotes] = useState(true)
   
   // Broadcast online status để students thấy
   useBroadcastOnline(user?.id)
@@ -112,7 +113,7 @@ export default function CounselorChat() {
       <div className="relative z-10">
         <Navbar />
 
-        <div className="max-w-[1600px] mx-auto px-4 py-6">
+        <div className="max-w-[1400px] mx-auto px-4 py-6">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">
             Phòng Tư vấn
@@ -310,6 +311,19 @@ export default function CounselorChat() {
                         }
                       </p>
                     </div>
+                    
+                    {/* Notes Toggle Button */}
+                    <button
+                      onClick={() => setShowNotes(!showNotes)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        showNotes 
+                          ? 'bg-white text-purple-600' 
+                          : 'bg-white/20 text-white hover:bg-white/30'
+                      }`}
+                      title={showNotes ? 'Ẩn ghi chú' : 'Xem ghi chú học sinh'}
+                    >
+                      <StickyNote size={20} />
+                    </button>
                   </div>
                 </div>
 
@@ -353,6 +367,9 @@ export default function CounselorChat() {
                                 urgency_level: level,
                                 ...(updateData.is_counseled !== undefined && { is_counseled: updateData.is_counseled })
                               }))
+                              
+                              // Refresh the student list to show updated urgency
+                              refetch()
                             } catch (error) {
                               console.error('Error updating urgency:', error)
                             }
@@ -373,6 +390,8 @@ export default function CounselorChat() {
                             is_counseled: isCounseled,
                             urgency_level: newUrgencyLevel
                           }))
+                          // Refresh the student list
+                          refetch()
                         }}
                         size="sm"
                       />
@@ -408,8 +427,8 @@ export default function CounselorChat() {
             )}
           </div>
 
-          {/* Notes Panel - Separate column on the right */}
-          {selectedRoom?.student_id && (
+          {/* Notes Panel - Separate column on the right (toggleable) */}
+          {showNotes && selectedRoom?.student_id && (
             <div className="lg:col-span-1">
               <div className="bg-white rounded-2xl shadow-xl overflow-hidden h-[calc(100vh-280px)]">
                 <StudentNotesPanel
@@ -417,11 +436,54 @@ export default function CounselorChat() {
                   studentName={getStudentName(selectedRoom)}
                   counselorId={user?.id}
                   defaultCollapsed={false}
+                  onClose={() => setShowNotes(false)}
                   inline={true}
                 />
               </div>
             </div>
           )}
+        </div>
+
+        {/* Info Card */}
+        <div className="mt-4 bg-white/90 rounded-2xl p-5 shadow-lg">
+          <h3 className="font-semibold text-gray-800 mb-3">
+            📋 Hướng dẫn cho tư vấn viên
+          </h3>
+          <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600">
+            <div>
+              <p className="font-semibold text-purple-600 mb-2 flex items-center gap-1">
+                <Eye size={16} />
+                Chat chung
+              </p>
+              <ul className="space-y-1">
+                <li>• Tất cả tư vấn viên đều thấy</li>
+                <li>• Phù hợp cho hỗ trợ nhanh</li>
+                <li>• Có thể cùng nhau tư vấn</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-semibold text-purple-600 mb-2 flex items-center gap-1">
+                <EyeOff size={16} />
+                Chat riêng
+              </p>
+              <ul className="space-y-1">
+                <li>• Chỉ bạn và admin thấy</li>
+                <li>• Học sinh chọn tư vấn viên cụ thể</li>
+                <li>• Đảm bảo riêng tư cao hơn</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-semibold text-purple-600 mb-2 flex items-center gap-1">
+                <Shield size={16} />
+                Trách nhiệm
+              </p>
+              <ul className="space-y-1">
+                <li>• Trả lời nhanh và chuyên nghiệp</li>
+                <li>• Tôn trọng quyền riêng tư</li>
+                <li>• Lắng nghe và thấu hiểu</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
       </div>

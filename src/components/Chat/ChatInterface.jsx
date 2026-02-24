@@ -95,12 +95,17 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
 
 `
 
-      // Check if note exists for this student
-      const { data: existingNote } = await supabase
+      // Check if note exists for this student (use maybeSingle to avoid 406 error)
+      const { data: existingNote, error: fetchError } = await supabase
         .from('student_notes')
         .select('id, ai_notes')
         .eq('student_id', studentId)
-        .single()
+        .maybeSingle()
+
+      if (fetchError) {
+        console.error('❌ Error fetching existing notes:', fetchError)
+        return
+      }
 
       if (existingNote) {
         // Prepend new note to existing ai_notes
@@ -118,18 +123,21 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
           console.log('✅ AI notes updated for student')
         }
       } else {
-        // Create new note record
-        const { error: insertError } = await supabase
+        // Create new note record using upsert to handle race conditions
+        const { error: upsertError } = await supabase
           .from('student_notes')
-          .insert({
+          .upsert({
             student_id: studentId,
             ai_notes: newAINote,
             ai_notes_updated_at: new Date().toISOString(),
             content: '' // Empty counselor notes
+          }, {
+            onConflict: 'student_id',
+            ignoreDuplicates: false
           })
 
-        if (insertError) {
-          console.error('❌ Error creating AI notes:', insertError)
+        if (upsertError) {
+          console.error('❌ Error creating AI notes:', upsertError)
         } else {
           console.log('✅ AI notes created for student')
         }
