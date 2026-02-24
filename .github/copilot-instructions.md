@@ -42,7 +42,7 @@ const isValid = validate({
 ```
 
 ### UI Components
-UI components accept `variant`, `size` props with Tailwind styling. See [Button.jsx](src/components/UI/Button.jsx) for the pattern:
+UI components accept `variant`, `size` props with Tailwind styling. See [Button.jsx](../src/components/UI/Button.jsx) for the pattern:
 - Variants: `primary`, `secondary`, `danger`, `ghost`, `success`, `outline`
 - Sizes: `sm`, `md`, `lg`, `xl`
 

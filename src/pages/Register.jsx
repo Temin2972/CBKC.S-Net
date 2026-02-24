@@ -4,13 +4,14 @@
  */
 import { useState, useCallback, useMemo } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Heart, AlertCircle, ArrowRight, MessageCircle } from 'lucide-react'
+import { Heart, AlertCircle, MessageCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useQuotes } from '../hooks/useQuotes'
 import { useForm, validators } from '../hooks/useForm'
-import { Input, PasswordInput, Button, Alert, Card } from '../components/UI'
+import { Input, PasswordInput, Button, Alert } from '../components/UI'
 import { ROUTES, PASSWORD_RULES } from '../constants'
 import { AUTH_MESSAGES, BUTTON_LABELS, FORM_LABELS } from '../constants/messages'
+import { isEmail } from '../utils/validation'
 
 // Feature messages based on redirect origin
 const FEATURE_MESSAGES = {
@@ -26,11 +27,22 @@ const FEATURE_MESSAGES = {
   },
 }
 
-// Username validation
-const validateUsername = (value) => {
+// Username/Email validation - accepts either valid username or valid email
+const validateUsernameOrEmail = (value) => {
   if (!value || value.length < 3) {
-    return 'Tên đăng nhập phải có ít nhất 3 ký tự'
+    return 'Vui lòng nhập ít nhất 3 ký tự'
   }
+  
+  // If it looks like an email, validate as email
+  if (value.includes('@')) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(value)) {
+      return 'Email không hợp lệ'
+    }
+    return null
+  }
+  
+  // Otherwise validate as username
   if (!/^[a-zA-Z0-9_]+$/.test(value)) {
     return 'Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới'
   }
@@ -77,7 +89,9 @@ function InfoBanner() {
         <AlertCircle size={18} className="text-teal-600 mt-0.5 flex-shrink-0" />
         <div className="text-sm">
           <p className="font-medium mb-0.5 text-teal-700">Dành cho học sinh</p>
-          <p className="text-teal-600">Không cần email. Chỉ cần tên đăng nhập và mật khẩu.</p>
+          <p className="text-teal-600">
+            Dùng tên đăng nhập hoặc email để tạo tài khoản.
+          </p>
         </div>
       </div>
     </div>
@@ -108,7 +122,7 @@ export default function Register() {
 
   const validationSchema = {
     fullName: [validators.required('Vui lòng nhập tên hiển thị')],
-    username: [validators.required('Vui lòng nhập tên đăng nhập'), validateUsername],
+    username: [validators.required('Vui lòng nhập tên đăng nhập hoặc email'), validateUsernameOrEmail],
     password: [
       validators.required('Vui lòng nhập mật khẩu'),
       validators.minLength(PASSWORD_RULES.MIN_LENGTH, AUTH_MESSAGES.PASSWORD_TOO_SHORT),
@@ -137,15 +151,19 @@ export default function Register() {
 
       setLoading(true)
 
+      // Auto-detect if input is email
+      const useEmail = isEmail(values.username)
+      
       const { error: signUpError } = await signUpStudent(
         values.username,
         values.password,
-        values.fullName
+        values.fullName,
+        useEmail
       )
 
       if (signUpError) {
         if (signUpError.message?.includes('already registered')) {
-          setError('Tên đăng nhập đã tồn tại')
+          setError(useEmail ? 'Email đã được sử dụng' : 'Tên đăng nhập đã tồn tại')
         } else {
           setError(signUpError.message || 'Đã có lỗi xảy ra')
         }
@@ -203,17 +221,17 @@ export default function Register() {
             <div>
               <Input
                 name="username"
-                label={FORM_LABELS.USERNAME}
+                label="Tên đăng nhập hoặc Email"
                 value={values.username}
                 onChange={handleUsernameChange}
-                placeholder="Tên đăng nhập"
+                placeholder="username hoặc email@example.com"
                 error={errors.username}
                 disabled={loading}
                 autoComplete="username"
                 variant="light"
               />
               <p className="text-xs text-gray-400 mt-1">
-                Chỉ chữ cái, số và dấu gạch dưới. Tối thiểu 3 ký tự.
+                Có thể dùng tên đăng nhập thông thường nếu không muốn dùng email.
               </p>
             </div>
 

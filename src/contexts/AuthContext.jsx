@@ -31,21 +31,22 @@ export function AuthProvider({ children }) {
   }, [])
 
   /**
-   * Sign up as a student with username
-   * @param {string} username - Username
+   * Sign up as a student with username or email
+   * @param {string} identifier - Username or email
    * @param {string} password - Password
    * @param {string} fullName - Full name
+   * @param {boolean} useEmail - Whether identifier is an email
    */
-  const signUpStudent = useCallback(async (username, password, fullName) => {
+  const signUpStudent = useCallback(async (identifier, password, fullName, useEmail = false) => {
     try {
-      const email = `${username}.student@${STUDENT_EMAIL_DOMAIN}`
+      const email = useEmail ? identifier : `${identifier}.student@${STUDENT_EMAIL_DOMAIN}`
 
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            username,
+            username: useEmail ? null : identifier,
             full_name: fullName,
             role: USER_ROLES.STUDENT,
           },
