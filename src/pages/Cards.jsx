@@ -44,6 +44,15 @@ export default function Cards() {
 
   const currentCard = shuffledCards[currentIndex]
 
+  // Get the card number based on creation order (oldest = 1)
+  const cardNumber = useMemo(() => {
+    if (!currentCard || cards.length === 0) return 0
+    // cards is sorted newest-first, so reverse index gives oldest-first number
+    const idx = cards.findIndex(c => c.id === currentCard.id)
+    if (idx === -1) return 0
+    return cards.length - idx
+  }, [currentCard, cards])
+
   // Popular cards for sidebar
   const popularCards = useMemo(() => {
     if (cards.length === 0) return []
@@ -68,7 +77,7 @@ export default function Cards() {
     return unviewedIndices[Math.floor(Math.random() * unviewedIndices.length)]
   }, [shuffledCards, currentIndex, viewedIds])
 
-  // Navigate to next random card with stacked card animation
+  // Navigate to next random card with fade animation
   const goToNextCard = useCallback(() => {
     if (shuffledCards.length === 0 || animState !== 'idle') return
 
@@ -84,8 +93,8 @@ export default function Cards() {
 
       setTimeout(() => {
         setAnimState('idle')
-      }, 400)
-    }, 400)
+      }, 250)
+    }, 300)
   }, [shuffledCards.length, getNextRandomIndex, currentCard, animState])
 
   // Go to specific card
@@ -103,8 +112,8 @@ export default function Cards() {
 
       setTimeout(() => {
         setAnimState('idle')
-      }, 400)
-    }, 400)
+      }, 250)
+    }, 300)
   }, [currentIndex, currentCard, animState])
 
   // Keyboard navigation
@@ -212,7 +221,7 @@ export default function Cards() {
 
               {/* No Cards State */}
               {!loading && shuffledCards.length === 0 && (
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-12 text-center border border-white/10">
+                <div className="bg-black/40 backdrop-blur-xl rounded-2xl p-12 text-center border border-white/15">
                   <div className="w-20 h-20 bg-teal-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Sparkles className="text-teal-400" size={40} />
                   </div>
@@ -246,13 +255,13 @@ export default function Cards() {
                     </h1>
 
                     {/* Card Meta */}
-                    <div className="flex items-center gap-3 text-sm text-white/50 mb-6">
-                      <span>Thẻ {currentIndex + 1}/{shuffledCards.length}</span>
+                    <div className="flex items-center gap-3 text-sm text-white/60 mb-6">
+                      <span>Thẻ #{cardNumber}/{cards.length}</span>
                     </div>
 
                     {/* Card Content Box */}
-                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 sm:p-8 mb-6 shadow-xl border border-white/10">
-                      <p className="text-white/90 text-lg sm:text-xl leading-relaxed whitespace-pre-wrap">
+                    <div className="bg-black/40 backdrop-blur-xl rounded-2xl p-6 sm:p-8 mb-6 shadow-xl border border-white/15">
+                      <p className="text-white text-lg sm:text-xl leading-relaxed whitespace-pre-wrap">
                         {currentCard.content}
                       </p>
 
@@ -320,7 +329,7 @@ export default function Cards() {
             {/* Sidebar */}
             <div className="lg:w-80 flex-shrink-0">
               {/* Popular Cards Section */}
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10">
+              <div className="bg-black/40 backdrop-blur-xl rounded-2xl p-5 border border-white/15">
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                   <TrendingUp size={20} className="text-teal-400" />
                   Nổi bật
@@ -369,7 +378,7 @@ export default function Cards() {
               </div>
 
               {/* Info Card */}
-              <div className="mt-6 bg-gradient-to-br from-teal-500/10 to-emerald-500/10 backdrop-blur-md rounded-2xl p-5 border border-teal-500/20">
+              <div className="mt-6 bg-black/30 backdrop-blur-xl rounded-2xl p-5 border border-teal-500/25">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center flex-shrink-0">
                     <Sparkles size={20} className="text-teal-400" />
@@ -468,30 +477,29 @@ export default function Cards() {
         </div>
       </Modal>
 
-      {/* Card Swipe Animation Styles */}
+      {/* Card Animation Styles */}
       <style>{`
         .card-content {
-          transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                      opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
         .card-leave {
-          transform: translateX(120%) rotate(15deg);
           opacity: 0;
+          transform: translateY(-12px) scale(0.98);
         }
 
         .card-enter {
-          animation: cardSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: cardFadeIn 0.25s ease-out forwards;
         }
 
-        @keyframes cardSlideIn {
+        @keyframes cardFadeIn {
           0% {
-            transform: translateX(-60px) rotate(-8deg) scale(0.9);
             opacity: 0;
+            transform: translateY(12px) scale(0.98);
           }
           100% {
-            transform: translateX(0) rotate(0) scale(1);
             opacity: 1;
+            transform: translateY(0) scale(1);
           }
         }
 
