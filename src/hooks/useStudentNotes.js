@@ -18,18 +18,18 @@ export function useStudentNotes(studentId) {
         }
 
         try {
-            // First fetch the notes
+            // First fetch the notes (use maybeSingle to avoid 406 error when no record exists)
             const { data, error } = await supabase
                 .from('student_notes')
                 .select('*')
                 .eq('student_id', studentId)
-                .single()
+                .maybeSingle()
 
-            if (error && error.code === 'PGRST116') {
-                // No notes exist yet, that's okay
-                setNotes({ content: '', student_id: studentId })
-            } else if (error) {
+            if (error) {
                 throw error
+            } else if (!data) {
+                // No notes exist yet, that's okay
+                setNotes({ content: '', ai_notes: '', student_id: studentId })
             } else {
                 // If there's an updated_by, fetch the user name separately
                 if (data.updated_by) {
@@ -37,7 +37,7 @@ export function useStudentNotes(studentId) {
                         .from('users')
                         .select('id, full_name')
                         .eq('id', data.updated_by)
-                        .single()
+                        .maybeSingle()
                     
                     data.updater = userData
                 }
@@ -87,7 +87,7 @@ export function useStudentNotes(studentId) {
                 .from('student_notes')
                 .select('id')
                 .eq('student_id', studentId)
-                .single()
+                .maybeSingle()
 
             if (existing) {
                 // Update existing
@@ -101,13 +101,15 @@ export function useStudentNotes(studentId) {
 
                 if (error) throw error
             } else {
-                // Create new
+                // Create new using upsert to handle race conditions
                 const { error } = await supabase
                     .from('student_notes')
-                    .insert({
+                    .upsert({
                         student_id: studentId,
                         content,
                         updated_by: counselorId
+                    }, {
+                        onConflict: 'student_id'
                     })
 
                 if (error) throw error
