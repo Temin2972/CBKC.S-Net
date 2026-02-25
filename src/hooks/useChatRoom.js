@@ -138,6 +138,12 @@ export function useChatRoom(userId, userRole) {
     }
 
     try {
+      // Clear chat_room_id in appointment_requests to avoid FK constraint
+      await supabase
+        .from('appointment_requests')
+        .update({ chat_room_id: null })
+        .eq('chat_room_id', idToDelete)
+
       const { error } = await supabase
         .from('chat_rooms')
         .delete()
