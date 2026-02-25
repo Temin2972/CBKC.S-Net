@@ -139,7 +139,7 @@ export default function Home() {
                 className="flex items-center gap-4 p-4 animate-gradient-flow border-2 border-amber-300 rounded-2xl hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
               >
                 <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-800 rounded-xl flex items-center justify-center text-white">
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-400 rounded-xl flex items-center justify-center text-white">
                     <Bell size={24} />
                   </div>
                   <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">

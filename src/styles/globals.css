@@ -191,11 +191,11 @@ body {
 .animate-gradient-flow {
   background: linear-gradient(90deg, 
     #fffbeb, /* amber-50 */
-    #ffedd5, /* orange-100 */
+    #feebc8, /* orange-200 */
     #fef3c7, /* amber-100 */
-    #fed7aa, /* orange-200 */
+    #fbd38d, /* orange-300 */
     #fef9c3, /* yellow-100 */
-    #ffedd5, /* orange-100 */
+    #feebc8, /* orange-200 */
     #fffbeb  /* amber-50 */
   );
   background-size: 400% 100%;
