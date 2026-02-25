@@ -1,17 +1,17 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { 
-  Copy, 
-  Share2, 
-  Check, 
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import {
+  Copy,
+  Share2,
+  Check,
   Plus,
   Loader2,
   Sparkles,
   Heart,
   RefreshCw,
   ChevronRight,
-  MessageCircle,
   TrendingUp,
-  Home
+  Home,
+  ArrowLeft
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -21,10 +21,33 @@ import Footer from '../components/Layout/Footer'
 import { Modal } from '../components/UI'
 import { ROUTES } from '../constants'
 
+// Card gradient colors for the stacked card look
+const CARD_GRADIENTS = [
+  'from-emerald-400 to-teal-500',
+  'from-teal-400 to-cyan-500',
+  'from-cyan-400 to-blue-500',
+  'from-sky-400 to-indigo-500',
+  'from-violet-400 to-purple-500',
+  'from-pink-400 to-rose-500',
+  'from-amber-400 to-orange-500',
+  'from-lime-400 to-green-500',
+]
+
+// Background colors for stacked cards behind
+const STACK_COLORS = [
+  'bg-blue-400',
+  'bg-pink-400',
+  'bg-orange-300',
+]
+
+function getCardGradient(index) {
+  return CARD_GRADIENTS[index % CARD_GRADIENTS.length]
+}
+
 export default function Cards() {
   const { id: userId, isCounselor } = useAuth()
   const { cards, loading, creating, createCard, getShuffledCards } = useCards()
-  
+
   const [shuffledCards, setShuffledCards] = useState([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [viewedIds, setViewedIds] = useState(new Set())
@@ -33,12 +56,7 @@ export default function Cards() {
   const [newCardTitle, setNewCardTitle] = useState('')
   const [newCardContent, setNewCardContent] = useState('')
   const [newCardAuthor, setNewCardAuthor] = useState('')
-  const [isFlipping, setIsFlipping] = useState(false)
-  const [flipDirection, setFlipDirection] = useState('next') // 'next' or 'prev'
-  
-  // Touch/swipe handling
-  const touchStartX = useRef(0)
-  const touchEndX = useRef(0)
+  const [animState, setAnimState] = useState('idle') // 'idle' | 'leaving' | 'entering'
 
   // Initialize shuffled cards
   useEffect(() => {
@@ -50,88 +68,68 @@ export default function Cards() {
 
   const currentCard = shuffledCards[currentIndex]
 
-  // Get popular cards for sidebar (first 5 cards or random selection)
+  // Popular cards for sidebar
   const popularCards = useMemo(() => {
     if (cards.length === 0) return []
     return cards.slice(0, 5)
   }, [cards])
 
-  // Get next random card that hasn't been viewed yet
+  // Get next random unviewed card index
   const getNextRandomIndex = useCallback(() => {
     if (shuffledCards.length === 0) return 0
-    
+
     const unviewedIndices = shuffledCards
       .map((_, idx) => idx)
       .filter(idx => idx !== currentIndex && !viewedIds.has(shuffledCards[idx]?.id))
-    
+
     if (unviewedIndices.length === 0) {
       setViewedIds(new Set())
       const allIndices = shuffledCards.map((_, idx) => idx).filter(idx => idx !== currentIndex)
       if (allIndices.length === 0) return currentIndex
       return allIndices[Math.floor(Math.random() * allIndices.length)]
     }
-    
+
     return unviewedIndices[Math.floor(Math.random() * unviewedIndices.length)]
   }, [shuffledCards, currentIndex, viewedIds])
 
-  // Navigate to next random card with flip animation
+  // Navigate to next random card with stacked card animation
   const goToNextCard = useCallback(() => {
-    if (shuffledCards.length === 0 || isFlipping) return
-    
-    setFlipDirection('next')
-    setIsFlipping(true)
-    
+    if (shuffledCards.length === 0 || animState !== 'idle') return
+
+    setAnimState('leaving')
+
     setTimeout(() => {
       const nextIdx = getNextRandomIndex()
       if (currentCard) {
         setViewedIds(prev => new Set([...prev, currentCard.id]))
       }
       setCurrentIndex(nextIdx)
-      
+      setAnimState('entering')
+
       setTimeout(() => {
-        setIsFlipping(false)
-      }, 300)
-    }, 300)
-  }, [shuffledCards.length, getNextRandomIndex, currentCard, isFlipping])
+        setAnimState('idle')
+      }, 400)
+    }, 400)
+  }, [shuffledCards.length, getNextRandomIndex, currentCard, animState])
 
   // Go to specific card
   const goToCard = useCallback((index) => {
-    if (index === currentIndex || isFlipping) return
-    
-    setFlipDirection(index > currentIndex ? 'next' : 'prev')
-    setIsFlipping(true)
-    
+    if (index === currentIndex || animState !== 'idle') return
+
+    setAnimState('leaving')
+
     setTimeout(() => {
       if (currentCard) {
         setViewedIds(prev => new Set([...prev, currentCard.id]))
       }
       setCurrentIndex(index)
-      
+      setAnimState('entering')
+
       setTimeout(() => {
-        setIsFlipping(false)
-      }, 300)
-    }, 300)
-  }, [currentIndex, currentCard, isFlipping])
-
-  // Handle touch start
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX
-  }
-
-  // Handle touch move
-  const handleTouchMove = (e) => {
-    touchEndX.current = e.touches[0].clientX
-  }
-
-  // Handle touch end - detect swipe
-  const handleTouchEnd = () => {
-    const swipeThreshold = 50
-    const diff = touchStartX.current - touchEndX.current
-
-    if (Math.abs(diff) > swipeThreshold) {
-      goToNextCard()
-    }
-  }
+        setAnimState('idle')
+      }, 400)
+    }, 400)
+  }, [currentIndex, currentCard, animState])
 
   // Keyboard navigation
   useEffect(() => {
@@ -144,7 +142,7 @@ export default function Cards() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [goToNextCard])
 
-  // Copy card content to clipboard
+  // Copy card content
   const handleCopy = async () => {
     if (!currentCard) return
     try {
@@ -160,7 +158,7 @@ export default function Cards() {
   // Share card content
   const handleShare = async () => {
     if (!currentCard) return
-    
+
     const shareText = `${currentCard.title}\n\n${currentCard.content}${currentCard.author ? `\n\n— ${currentCard.author}` : ''}`
     const shareData = {
       title: currentCard.title || 'S-Net Wellbeing Card',
@@ -181,10 +179,10 @@ export default function Cards() {
     }
   }
 
-  // Handle create new card
+  // Create new card
   const handleCreateCard = async () => {
     if (!newCardContent.trim()) return
-    
+
     const result = await createCard(newCardTitle || null, newCardContent, newCardAuthor || null, userId)
     if (result.success) {
       setNewCardTitle('')
@@ -195,148 +193,183 @@ export default function Cards() {
     }
   }
 
-  // Format date
-  const formatDate = () => {
-    const now = new Date()
-    const options = { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }
-    const formatted = now.toLocaleDateString('vi-VN', options)
-    const time = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-    return `${formatted}, ${time} (GMT+7)`
-  }
+  const cardGradient = getCardGradient(currentIndex)
 
   return (
-    <div className="min-h-screen bg-[#2a2a2a]">
-      <Navbar />
+    <div className="min-h-screen relative">
+      {/* Background - matching other pages */}
+      <div
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundImage: `url('/images/flying.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(3px) brightness(0.9)'
+        }}
+      />
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-teal-900/20 via-emerald-800/10 to-cyan-900/20" />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm mb-6">
-          <Link to={ROUTES.HOME} className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1">
-            <Home size={14} />
-            Trang chủ
-          </Link>
-          <ChevronRight size={14} className="text-gray-500" />
-          <span className="text-amber-400">Thông điệp an lành</span>
-          <span className="ml-auto text-gray-400 text-xs hidden sm:block">{formatDate()}</span>
-        </div>
+      <div className="relative z-10">
+        <Navbar />
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Main Content */}
-          <div className="flex-1 min-w-0">
-            {/* Loading State */}
-            {loading && (
-              <div className="flex items-center justify-center py-20">
-                <div className="text-center">
-                  <Loader2 className="animate-spin text-amber-400 mx-auto mb-4" size={48} />
-                  <p className="text-gray-400">Đang tải thẻ...</p>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-sm mb-8">
+            <Link to={ROUTES.HOME} className="text-white/70 hover:text-white transition-colors flex items-center gap-1">
+              <Home size={14} />
+              Trang chủ
+            </Link>
+            <ChevronRight size={14} className="text-white/40" />
+            <span className="text-white">Thông điệp an lành</span>
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Main Content */}
+            <div className="flex-1 min-w-0">
+              {/* Loading State */}
+              {loading && (
+                <div className="flex items-center justify-center py-20">
+                  <div className="text-center">
+                    <Loader2 className="animate-spin text-teal-400 mx-auto mb-4" size={48} />
+                    <p className="text-white/60">Đang tải thẻ...</p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* No Cards State */}
-            {!loading && shuffledCards.length === 0 && (
-              <div className="bg-[#3a3a3a] rounded-2xl p-12 text-center">
-                <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="text-amber-400" size={40} />
+              {/* No Cards State */}
+              {!loading && shuffledCards.length === 0 && (
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-12 text-center border border-white/10">
+                  <div className="w-20 h-20 bg-teal-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="text-teal-400" size={40} />
+                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-2">Chưa có thẻ nào</h2>
+                  <p className="text-white/60 mb-6">Hãy tạo thẻ đầu tiên để bắt đầu chia sẻ thông điệp an lành.</p>
+                  {isCounselor && (
+                    <button
+                      onClick={() => setShowAddModal(true)}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-xl transition-colors shadow-lg shadow-teal-500/20"
+                    >
+                      <Plus size={20} />
+                      Tạo thẻ đầu tiên
+                    </button>
+                  )}
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Chưa có thẻ nào</h2>
-                <p className="text-gray-400 mb-6">Hãy tạo thẻ đầu tiên để bắt đầu chia sẻ thông điệp an lành.</p>
-                {isCounselor && (
-                  <button
-                    onClick={() => setShowAddModal(true)}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition-colors"
-                  >
-                    <Plus size={20} />
-                    Tạo thẻ đầu tiên
-                  </button>
-                )}
-              </div>
-            )}
+              )}
 
-            {/* Card Display */}
-            {!loading && currentCard && (
-              <div className="perspective-1000">
-                {/* Card Container with 3D Flip */}
-                <div
-                  onTouchStart={handleTouchStart}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
-                  className={`
-                    transform-style-3d transition-transform duration-500 ease-in-out
-                    ${isFlipping ? (flipDirection === 'next' ? 'rotate-y-90' : '-rotate-y-90') : 'rotate-y-0'}
-                  `}
-                >
-                  {/* Main Title */}
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-amber-100 mb-6 leading-tight">
-                    {currentCard.title || 'Thông điệp an lành'}
-                  </h1>
+              {/* Card Display - Stacked Cards */}
+              {!loading && currentCard && (
+                <div className="card-stack-container">
+                  {/* Stacked cards */}
+                  <div className="relative flex items-center justify-center py-4">
+                    <div className="card-stack-wrapper">
+                      {/* Bottom card (furthest back) */}
+                      <div className={`card-behind card-behind-3 ${STACK_COLORS[0]} rounded-3xl`} />
+                      {/* Middle card */}
+                      <div className={`card-behind card-behind-2 ${STACK_COLORS[1]} rounded-3xl`} />
+                      {/* Second card */}
+                      <div className={`card-behind card-behind-1 ${STACK_COLORS[2]} rounded-3xl`} />
 
-                  {/* Card Meta */}
-                  <div className="flex items-center gap-3 text-sm text-gray-400 mb-6">
-                    <span className="text-amber-400 font-medium">S-NET</span>
-                    <span>—</span>
-                    <span>Thẻ {currentIndex + 1}/{shuffledCards.length}</span>
-                    {viewedIds.size > 0 && (
-                      <>
-                        <span>•</span>
-                        <span>Đã xem: {viewedIds.size}</span>
-                      </>
-                    )}
+                      {/* Top card (current) */}
+                      <div
+                        className={`
+                          card-front bg-gradient-to-br ${cardGradient} rounded-3xl shadow-2xl
+                          relative overflow-hidden
+                          ${animState === 'leaving' ? 'card-leave' : ''}
+                          ${animState === 'entering' ? 'card-enter' : ''}
+                        `}
+                      >
+                        {/* Badge */}
+                        <div className="absolute top-5 left-5">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/25 backdrop-blur-sm rounded-full text-white text-xs font-medium">
+                            <Sparkles size={12} />
+                            Thẻ {currentIndex + 1}/{shuffledCards.length}
+                          </span>
+                        </div>
+
+                        {/* Refresh button */}
+                        <button
+                          onClick={goToNextCard}
+                          disabled={animState !== 'idle'}
+                          className="absolute top-5 right-5 w-10 h-10 bg-white/25 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/40 transition-colors disabled:opacity-50"
+                          aria-label="Next card"
+                        >
+                          <RefreshCw size={18} className={animState !== 'idle' ? 'animate-spin' : ''} />
+                        </button>
+
+                        {/* Card Content */}
+                        <div className="flex flex-col items-center justify-center text-center px-8 pt-20 pb-8 min-h-[380px] sm:min-h-[420px]">
+                          {/* Icon */}
+                          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-6">
+                            <Heart size={32} className="text-white" />
+                          </div>
+
+                          {/* Title */}
+                          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight italic">
+                            {currentCard.title || 'Thông điệp an lành'}
+                          </h2>
+
+                          {/* Content */}
+                          <p className="text-white/90 text-base sm:text-lg leading-relaxed max-w-md whitespace-pre-wrap">
+                            {currentCard.content}
+                          </p>
+
+                          {/* Author */}
+                          {currentCard.author && (
+                            <p className="mt-6 text-white/70 italic">
+                              — {currentCard.author}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Previous button */}
+                        <div className="absolute bottom-5 left-5">
+                          <button
+                            onClick={goToNextCard}
+                            disabled={animState !== 'idle'}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-white/25 backdrop-blur-sm rounded-full text-white text-sm font-medium hover:bg-white/40 transition-colors disabled:opacity-50"
+                          >
+                            <ArrowLeft size={14} />
+                            Thẻ khác
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Card Content Box */}
-                  <div className="bg-[#3a3a3a] rounded-2xl p-6 sm:p-8 mb-6 shadow-xl border border-gray-700/50">
-                    {/* Content */}
-                    <div className="prose prose-lg prose-invert max-w-none">
-                      <p className="text-gray-200 text-lg sm:text-xl leading-relaxed whitespace-pre-wrap">
-                        {currentCard.content}
-                      </p>
-                    </div>
+                  {/* Actions below the card */}
+                  <div className="flex flex-wrap items-center justify-center gap-3 mt-6 mb-6">
+                    <button
+                      onClick={handleCopy}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-sm hover:bg-white/20 rounded-xl text-white transition-colors border border-white/10"
+                    >
+                      {copied ? (
+                        <>
+                          <Check size={18} className="text-green-300" />
+                          <span className="text-green-300">Đã sao chép</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={18} />
+                          <span>Sao chép</span>
+                        </>
+                      )}
+                    </button>
 
-                    {/* Author */}
-                    {currentCard.author && (
-                      <p className="mt-6 text-right text-amber-400/80 italic text-lg">
-                        — {currentCard.author}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Action Buttons Row */}
-                  <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={handleCopy}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-[#3a3a3a] hover:bg-[#4a4a4a] rounded-xl text-gray-300 transition-colors border border-gray-700/50"
-                      >
-                        {copied ? (
-                          <>
-                            <Check size={18} className="text-green-400" />
-                            <span className="text-green-400">Đã sao chép</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={18} />
-                            <span className="hidden sm:inline">Sao chép</span>
-                          </>
-                        )}
-                      </button>
-
-                      <button
-                        onClick={handleShare}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 rounded-xl text-white transition-colors"
-                      >
-                        <Share2 size={18} />
-                        <span className="hidden sm:inline">Chia sẻ</span>
-                      </button>
-                    </div>
+                    <button
+                      onClick={handleShare}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-teal-500 hover:bg-teal-600 rounded-xl text-white transition-colors shadow-lg shadow-teal-500/20"
+                    >
+                      <Share2 size={18} />
+                      <span>Chia sẻ</span>
+                    </button>
 
                     {isCounselor && (
                       <button
                         onClick={() => setShowAddModal(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-[#3a3a3a] hover:bg-[#4a4a4a] rounded-xl text-gray-300 transition-colors border border-gray-700/50"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-sm hover:bg-white/20 rounded-xl text-white transition-colors border border-white/10"
                       >
                         <Plus size={18} />
-                        <span className="hidden sm:inline">Thêm thẻ</span>
+                        <span>Thêm thẻ</span>
                       </button>
                     )}
                   </div>
@@ -344,92 +377,87 @@ export default function Cards() {
                   {/* Read Another Card Button */}
                   <button
                     onClick={goToNextCard}
-                    disabled={isFlipping}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-2xl text-white font-semibold text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-500/20"
+                    disabled={animState !== 'idle'}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-teal-500 hover:bg-teal-600 rounded-2xl text-white font-semibold text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-500/20"
                   >
-                    <RefreshCw size={22} className={isFlipping ? 'animate-spin' : ''} />
+                    <RefreshCw size={22} className={animState !== 'idle' ? 'animate-spin' : ''} />
                     Đọc thẻ khác
-                    <Sparkles size={18} />
                   </button>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Sidebar */}
-          <div className="lg:w-80 flex-shrink-0">
-            {/* Popular Cards Section */}
-            <div className="bg-[#3a3a3a] rounded-2xl p-5 border border-gray-700/50">
-              <h3 className="text-lg font-bold text-amber-400 mb-4 flex items-center gap-2">
-                <TrendingUp size={20} />
-                Xem nhiều
-              </h3>
+            {/* Sidebar */}
+            <div className="lg:w-80 flex-shrink-0">
+              {/* Popular Cards Section */}
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <TrendingUp size={20} className="text-teal-400" />
+                  Nổi bật
+                </h3>
 
-              <div className="space-y-4">
-                {popularCards.map((card, index) => (
-                  <button
-                    key={card.id}
-                    onClick={() => {
-                      const cardIndex = shuffledCards.findIndex(c => c.id === card.id)
-                      if (cardIndex !== -1) goToCard(cardIndex)
-                    }}
-                    className={`
-                      w-full flex gap-3 p-3 rounded-xl text-left transition-all
-                      ${currentCard?.id === card.id 
-                        ? 'bg-amber-500/20 border border-amber-500/50' 
-                        : 'hover:bg-[#4a4a4a] border border-transparent'}
-                    `}
-                  >
-                    {/* Thumbnail/Icon */}
-                    <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-amber-500/30 to-orange-500/30 flex items-center justify-center flex-shrink-0">
-                      <Heart size={24} className="text-amber-400" />
-                    </div>
-                    
-                    {/* Card Info */}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-200 line-clamp-2 mb-1">
-                        {card.title || card.content.substring(0, 50) + '...'}
-                      </h4>
-                      {card.author && (
-                        <p className="text-xs text-gray-500 truncate">
-                          — {card.author}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
-                        <MessageCircle size={12} />
-                        <span>{index * 47 + 31}</span>
+                <div className="space-y-3">
+                  {popularCards.map((card) => (
+                    <button
+                      key={card.id}
+                      onClick={() => {
+                        const cardIndex = shuffledCards.findIndex(c => c.id === card.id)
+                        if (cardIndex !== -1) goToCard(cardIndex)
+                      }}
+                      className={`
+                        w-full flex gap-3 p-3 rounded-xl text-left transition-all
+                        ${currentCard?.id === card.id
+                          ? 'bg-teal-500/20 border border-teal-500/50'
+                          : 'hover:bg-white/10 border border-transparent'}
+                      `}
+                    >
+                      {/* Thumbnail/Icon */}
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-teal-500/30 to-emerald-500/30 flex items-center justify-center flex-shrink-0">
+                        <Heart size={20} className="text-teal-300" />
                       </div>
-                    </div>
-                  </button>
-                ))}
 
-                {popularCards.length === 0 && !loading && (
-                  <p className="text-gray-500 text-sm text-center py-4">
-                    Chưa có thẻ nào
-                  </p>
-                )}
-              </div>
-            </div>
+                      {/* Card Info */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-white line-clamp-2 mb-1">
+                          {card.title || card.content.substring(0, 50) + '...'}
+                        </h4>
+                        {card.author && (
+                          <p className="text-xs text-white/40 truncate">
+                            — {card.author}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
 
-            {/* Info Card */}
-            <div className="mt-6 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-2xl p-5 border border-amber-500/20">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                  <Sparkles size={20} className="text-amber-400" />
+                  {popularCards.length === 0 && !loading && (
+                    <p className="text-white/40 text-sm text-center py-4">
+                      Chưa có thẻ nào
+                    </p>
+                  )}
                 </div>
-                <div>
-                  <h4 className="font-medium text-amber-300 mb-1">Thông điệp an lành</h4>
-                  <p className="text-sm text-gray-400 leading-relaxed">
-                    Vuốt trái/phải hoặc nhấn nút "Đọc thẻ khác" để khám phá những thông điệp tích cực mỗi ngày.
-                  </p>
+              </div>
+
+              {/* Info Card */}
+              <div className="mt-6 bg-gradient-to-br from-teal-500/10 to-emerald-500/10 backdrop-blur-md rounded-2xl p-5 border border-teal-500/20">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center flex-shrink-0">
+                    <Sparkles size={20} className="text-teal-400" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-teal-300 mb-1">Thông điệp an lành</h4>
+                    <p className="text-sm text-white/50 leading-relaxed">
+                      Nhấn nút "Đọc thẻ khác" để khám phá những thông điệp tích cực mỗi ngày.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
 
-      <Footer />
+        <Footer />
+      </div>
 
       {/* Add Card Modal */}
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Tạo thẻ mới">
@@ -448,7 +476,7 @@ export default function Cards() {
               value={newCardTitle}
               onChange={(e) => setNewCardTitle(e.target.value)}
               placeholder="Tiêu đề của thẻ..."
-              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               maxLength={200}
             />
           </div>
@@ -462,7 +490,7 @@ export default function Cards() {
               value={newCardContent}
               onChange={(e) => setNewCardContent(e.target.value)}
               placeholder="Viết thông điệp của bạn tại đây..."
-              className="w-full h-48 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
+              className="w-full h-48 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
             />
           </div>
 
@@ -476,7 +504,7 @@ export default function Cards() {
               value={newCardAuthor}
               onChange={(e) => setNewCardAuthor(e.target.value)}
               placeholder="Tên tác giả hoặc nguồn..."
-              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               maxLength={100}
             />
           </div>
@@ -492,7 +520,7 @@ export default function Cards() {
             <button
               onClick={handleCreateCard}
               disabled={!newCardContent.trim() || creating}
-              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-500/20"
             >
               {creating ? (
                 <>
@@ -510,24 +538,63 @@ export default function Cards() {
         </div>
       </Modal>
 
-      {/* 3D Flip Animation Styles */}
+      {/* Stacked Card Animation Styles */}
       <style>{`
-        .perspective-1000 {
-          perspective: 1000px;
+        .card-stack-wrapper {
+          position: relative;
+          width: 100%;
+          max-width: 420px;
+          margin: 0 auto;
         }
-        .transform-style-3d {
-          transform-style: preserve-3d;
-          backface-visibility: hidden;
+
+        .card-behind {
+          position: absolute;
+          inset: 0;
+          opacity: 0.7;
         }
-        .rotate-y-0 {
-          transform: rotateY(0deg);
+
+        .card-behind-3 {
+          transform: translateX(-24px) rotate(-6deg);
+          z-index: 1;
         }
-        .rotate-y-90 {
-          transform: rotateY(90deg);
+
+        .card-behind-2 {
+          transform: translateX(-14px) rotate(-3.5deg);
+          z-index: 2;
         }
-        .-rotate-y-90 {
-          transform: rotateY(-90deg);
+
+        .card-behind-1 {
+          transform: translateX(-6px) rotate(-1.5deg);
+          z-index: 3;
         }
+
+        .card-front {
+          position: relative;
+          z-index: 4;
+          transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                      opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-leave {
+          transform: translateX(120%) rotate(15deg);
+          opacity: 0;
+        }
+
+        .card-enter {
+          animation: cardSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes cardSlideIn {
+          0% {
+            transform: translateX(-60px) rotate(-8deg) scale(0.9);
+            opacity: 0;
+          }
+          100% {
+            transform: translateX(0) rotate(0) scale(1);
+            opacity: 1;
+          }
+        }
+
         .line-clamp-2 {
           display: -webkit-box;
           -webkit-line-clamp: 2;
