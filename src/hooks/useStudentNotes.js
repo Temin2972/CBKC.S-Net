@@ -136,13 +136,12 @@ export function useStudentNotes(studentId) {
     return {
         notes,
         content: notes?.content || '',
-        aiNotes: notes?.ai_notes || '',
-        aiNotesUpdatedAt: notes?.ai_notes_updated_at,
         loading,
         saving,
         error,
         lastUpdatedBy: notes?.updater?.full_name,
         lastUpdatedAt: notes?.updated_at,
+        isAIGenerated: !notes?.updated_by && !!notes?.content, // AI-generated if has content but no updated_by
         saveNotes,
         refetch: fetchNotes
     }

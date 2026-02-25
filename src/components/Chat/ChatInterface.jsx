@@ -65,7 +65,7 @@ export default function ChatInterface({ chatRoom, currentUser }) {
     })
   }, [messages])
 
-  // Save AI assessment to student_notes.ai_notes (persists across chat rooms)
+  // Save AI assessment to student_notes.content (only if counselor hasn't written notes yet)
   const saveAINotesToStudent = useCallback(async (studentId, assessment) => {
     if (!studentId || !assessment) return
 
@@ -85,20 +85,22 @@ export default function ChatInterface({ chatRoom, currentUser }) {
         'high': 'Cao'
       }
 
-      const newAINote = `[${timestamp}]
-📊 Mức độ: ${urgencyLabels[assessment.urgencyLevel] || 'Chưa xác định'}
+      const newAINote = `🤖 Đánh giá AI - ${timestamp}
+═══════════════════════════════════════
+📊 Mức độ khẩn cấp: ${urgencyLabels[assessment.urgencyLevel] || 'Chưa xác định'}
 ⚠️ Nguy cơ tự hại: ${suicideRiskLabels[assessment.suicideRisk] || 'Không có'}
-${assessment.mainIssues?.length > 0 ? `📋 Vấn đề: ${assessment.mainIssues.join(', ')}` : ''}
-${assessment.emotionalState ? `💭 Cảm xúc: ${assessment.emotionalState}` : ''}
+${assessment.mainIssues?.length > 0 ? `📋 Vấn đề chính: ${assessment.mainIssues.join(', ')}` : ''}
+${assessment.emotionalState ? `💭 Trạng thái cảm xúc: ${assessment.emotionalState}` : ''}
 ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
-─────────────────────────────
+═══════════════════════════════════════
+⚡ Đây là đánh giá tự động, cần xác nhận bởi tư vấn viên
 
 `
 
-      // Check if note exists for this student (use maybeSingle to avoid 406 error)
+      // Check if note exists for this student
       const { data: existingNote, error: fetchError } = await supabase
         .from('student_notes')
-        .select('id, ai_notes, content')
+        .select('id, content, updated_by')
         .eq('student_id', studentId)
         .maybeSingle()
 
@@ -107,46 +109,60 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
         return
       }
 
+      // Only save if counselor hasn't written notes yet (updated_by is null)
       if (existingNote) {
-        // Update existing record
-        const updateData = {
-          ai_notes: newAINote + (existingNote.ai_notes || ''),
-          ai_notes_updated_at: new Date().toISOString()
+        // If a counselor has already updated the notes, skip AI update
+        if (existingNote.updated_by) {
+          console.log('ℹ️ Counselor has already written notes, skipping AI assessment')
+          return
         }
         
-        // If counselor notes are empty, also set the main content to AI notes
-        if (!existingNote.content || existingNote.content.trim() === '') {
-          updateData.content = newAINote
-        }
-        
+        // Prepend new AI note to existing content (if no counselor has updated)
         const { error: updateError } = await supabase
           .from('student_notes')
-          .update(updateData)
+          .update({
+            content: newAINote + (existingNote.content || '')
+            // Don't set updated_by - keep it null so AI can continue updating
+          })
           .eq('student_id', studentId)
+          .is('updated_by', null) // Extra safety: only update if updated_by is still null
 
         if (updateError) {
           console.error('❌ Error updating AI notes:', updateError)
         } else {
-          console.log('✅ AI notes updated for student')
+          console.log('✅ AI assessment saved to student notes')
         }
       } else {
-        // Create new note record - AI notes become both ai_notes and initial content
-        const { error: upsertError } = await supabase
+        // Create new note record with AI assessment
+        const { error: insertError } = await supabase
           .from('student_notes')
-          .upsert({
+          .insert({
             student_id: studentId,
-            ai_notes: newAINote,
-            ai_notes_updated_at: new Date().toISOString(),
-            content: newAINote // Use AI assessment as initial counselor notes
-          }, {
-            onConflict: 'student_id',
-            ignoreDuplicates: false
+            content: newAINote
+            // updated_by is null - indicates AI-generated, not counselor-written
           })
 
-        if (upsertError) {
-          console.error('❌ Error creating AI notes:', upsertError)
+        if (insertError) {
+          // Handle race condition - record might have been created
+          if (insertError.code === '23505') {
+            console.log('ℹ️ Note already exists, attempting update...')
+            // Try to update instead (only if updated_by is still null)
+            const { error: retryError } = await supabase
+              .from('student_notes')
+              .update({ content: newAINote })
+              .eq('student_id', studentId)
+              .is('updated_by', null)
+            
+            if (retryError) {
+              console.error('❌ Error on retry update:', retryError)
+            } else {
+              console.log('✅ AI assessment saved on retry')
+            }
+          } else {
+            console.error('❌ Error creating AI notes:', insertError)
+          }
         } else {
-          console.log('✅ AI notes created for student')
+          console.log('✅ AI assessment saved to student notes')
         }
       }
     } catch (error) {

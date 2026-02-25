@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react'
 import {
     ChevronRight, ChevronLeft, Save, Loader2,
-    StickyNote, Clock, User, X, RefreshCw, Bot, ChevronDown, ChevronUp
+    StickyNote, Clock, User, X, RefreshCw, Bot
 } from 'lucide-react'
 import { useStudentNotes } from '../../hooks/useStudentNotes'
 
@@ -19,12 +19,11 @@ export default function StudentNotesPanel({
 }) {
     const {
         content,
-        aiNotes,
-        aiNotesUpdatedAt,
         saving,
         loading,
         lastUpdatedBy,
         lastUpdatedAt,
+        isAIGenerated,
         saveNotes,
         refetch
     } = useStudentNotes(studentId)
@@ -33,7 +32,6 @@ export default function StudentNotesPanel({
     const [localContent, setLocalContent] = useState('')
     const [hasChanges, setHasChanges] = useState(false)
     const [isRefreshing, setIsRefreshing] = useState(false)
-    const [showAINotes, setShowAINotes] = useState(true)
 
     useEffect(() => {
         setLocalContent(content)
@@ -140,60 +138,25 @@ export default function StudentNotesPanel({
                     </div>
                 ) : (
                     <>
-                        {/* AI Notes Section (collapsible) - shown separately at top */}
-                        {aiNotes && (
-                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 flex-shrink-0">
-                                <button
-                                    onClick={() => setShowAINotes(!showAINotes)}
-                                    className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-blue-100/50 rounded-lg transition-colors"
-                                >
-                                    <div className="flex items-center gap-2 text-blue-700">
-                                        <Bot size={16} />
-                                        <span className="text-sm font-medium">Đánh giá AI</span>
-                                        {aiNotesUpdatedAt && (
-                                            <span className="text-xs text-blue-500">
-                                                ({new Date(aiNotesUpdatedAt).toLocaleDateString('vi-VN')})
-                                            </span>
-                                        )}
-                                    </div>
-                                    {showAINotes ? <ChevronUp size={16} className="text-blue-500" /> : <ChevronDown size={16} className="text-blue-500" />}
-                                </button>
-                                {showAINotes && (
-                                    <div className="px-3 pb-3">
-                                        <pre className="text-xs text-gray-700 whitespace-pre-wrap font-sans max-h-32 overflow-y-auto bg-white/50 rounded p-2">
-                                            {aiNotes}
-                                        </pre>
-                                        {/* Button to merge AI notes into counselor notes */}
-                                        {!localContent && (
-                                            <button
-                                                onClick={() => {
-                                                    setLocalContent(aiNotes)
-                                                    setShowAINotes(false)
-                                                }}
-                                                className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
-                                            >
-                                                Sử dụng làm ghi chú ban đầu →
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
+                        {/* AI-generated indicator */}
+                        {isAIGenerated && content && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex items-center gap-2 text-blue-700 text-xs flex-shrink-0">
+                                <Bot size={14} />
+                                <span>Ghi chú này được tạo bởi AI. Chỉnh sửa để xác nhận.</span>
                             </div>
                         )}
 
-                        {/* Counselor Notes */}
+                        {/* Notes textarea */}
                         <div className="flex-1 flex flex-col min-h-0">
                             <label className="text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
                                 <User size={12} />
-                                Ghi chú tư vấn viên
+                                Ghi chú học sinh
                             </label>
                             <textarea
                                 value={localContent}
                                 onChange={(e) => setLocalContent(e.target.value)}
-                                placeholder={aiNotes 
-                                    ? "Thêm ghi chú hoặc nhấn 'Sử dụng làm ghi chú ban đầu' ở trên để dùng đánh giá AI..."
-                                    : "Thêm ghi chú về học sinh này...&#10;&#10;Ví dụ:&#10;- Tình trạng gia đình&#10;- Vấn đề học tập&#10;- Lịch sử tư vấn&#10;- Điều cần lưu ý"
-                                }
-                                className="flex-1 w-full p-3 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none min-h-[100px]"
+                                placeholder="Thêm ghi chú về học sinh này...&#10;&#10;Ví dụ:&#10;- Tình trạng gia đình&#10;- Vấn đề học tập&#10;- Lịch sử tư vấn&#10;- Điều cần lưu ý"
+                                className="flex-1 w-full p-3 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none min-h-[150px]"
                             />
                         </div>
 
