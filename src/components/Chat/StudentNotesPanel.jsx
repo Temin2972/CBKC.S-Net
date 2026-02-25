@@ -140,9 +140,9 @@ export default function StudentNotesPanel({
                     </div>
                 ) : (
                     <>
-                        {/* AI Notes Section (collapsible) */}
+                        {/* AI Notes Section (collapsible) - shown separately at top */}
                         {aiNotes && (
-                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 flex-shrink-0">
                                 <button
                                     onClick={() => setShowAINotes(!showAINotes)}
                                     className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-blue-100/50 rounded-lg transition-colors"
@@ -160,9 +160,21 @@ export default function StudentNotesPanel({
                                 </button>
                                 {showAINotes && (
                                     <div className="px-3 pb-3">
-                                        <pre className="text-xs text-gray-700 whitespace-pre-wrap font-sans max-h-40 overflow-y-auto bg-white/50 rounded p-2">
+                                        <pre className="text-xs text-gray-700 whitespace-pre-wrap font-sans max-h-32 overflow-y-auto bg-white/50 rounded p-2">
                                             {aiNotes}
                                         </pre>
+                                        {/* Button to merge AI notes into counselor notes */}
+                                        {!localContent && (
+                                            <button
+                                                onClick={() => {
+                                                    setLocalContent(aiNotes)
+                                                    setShowAINotes(false)
+                                                }}
+                                                className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                                            >
+                                                Sử dụng làm ghi chú ban đầu →
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -177,8 +189,11 @@ export default function StudentNotesPanel({
                             <textarea
                                 value={localContent}
                                 onChange={(e) => setLocalContent(e.target.value)}
-                                placeholder="Thêm ghi chú về học sinh này...&#10;&#10;Ví dụ:&#10;- Tình trạng gia đình&#10;- Vấn đề học tập&#10;- Lịch sử tư vấn&#10;- Điều cần lưu ý"
-                                className="flex-1 w-full p-3 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none min-h-[120px]"
+                                placeholder={aiNotes 
+                                    ? "Thêm ghi chú hoặc nhấn 'Sử dụng làm ghi chú ban đầu' ở trên để dùng đánh giá AI..."
+                                    : "Thêm ghi chú về học sinh này...&#10;&#10;Ví dụ:&#10;- Tình trạng gia đình&#10;- Vấn đề học tập&#10;- Lịch sử tư vấn&#10;- Điều cần lưu ý"
+                                }
+                                className="flex-1 w-full p-3 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none min-h-[100px]"
                             />
                         </div>
 

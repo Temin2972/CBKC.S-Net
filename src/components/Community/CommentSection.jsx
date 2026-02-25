@@ -4,7 +4,7 @@ import CommentList from './CommentList'
 import ContentModerationModal from './ContentModerationModal'
 import { getModerationMessage, MODERATION_ACTIONS } from '../../lib/contentModeration'
 
-export default function CommentSection({ postId, currentUser }) {
+export default function CommentSection({ postId, currentUser, role }) {
   const { 
     comments, 
     loading,
@@ -93,6 +93,7 @@ export default function CommentSection({ postId, currentUser }) {
         comments={comments}
         loading={loading}
         currentUser={currentUser}
+        role={role}
         onCreateComment={handleCreateComment}
         onLikeComment={toggleCommentLike}
         onDeleteComment={deleteComment}

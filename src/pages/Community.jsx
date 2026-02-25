@@ -708,6 +708,7 @@ export default function Community() {
                       <CommentSection
                         postId={post.id}
                         currentUser={user}
+                        role={role}
                       />
                     </div>
                   )}

@@ -98,7 +98,7 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
       // Check if note exists for this student (use maybeSingle to avoid 406 error)
       const { data: existingNote, error: fetchError } = await supabase
         .from('student_notes')
-        .select('id, ai_notes')
+        .select('id, ai_notes, content')
         .eq('student_id', studentId)
         .maybeSingle()
 
@@ -108,13 +108,20 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
       }
 
       if (existingNote) {
-        // Prepend new note to existing ai_notes
+        // Update existing record
+        const updateData = {
+          ai_notes: newAINote + (existingNote.ai_notes || ''),
+          ai_notes_updated_at: new Date().toISOString()
+        }
+        
+        // If counselor notes are empty, also set the main content to AI notes
+        if (!existingNote.content || existingNote.content.trim() === '') {
+          updateData.content = newAINote
+        }
+        
         const { error: updateError } = await supabase
           .from('student_notes')
-          .update({
-            ai_notes: newAINote + (existingNote.ai_notes || ''),
-            ai_notes_updated_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq('student_id', studentId)
 
         if (updateError) {
@@ -123,14 +130,14 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
           console.log('✅ AI notes updated for student')
         }
       } else {
-        // Create new note record using upsert to handle race conditions
+        // Create new note record - AI notes become both ai_notes and initial content
         const { error: upsertError } = await supabase
           .from('student_notes')
           .upsert({
             student_id: studentId,
             ai_notes: newAINote,
             ai_notes_updated_at: new Date().toISOString(),
-            content: '' // Empty counselor notes
+            content: newAINote // Use AI assessment as initial counselor notes
           }, {
             onConflict: 'student_id',
             ignoreDuplicates: false

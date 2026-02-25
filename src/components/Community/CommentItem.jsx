@@ -3,7 +3,8 @@ import { Heart, Trash2, MessageCircle } from 'lucide-react'
 
 export default function CommentItem({ 
   comment, 
-  currentUser, 
+  currentUser,
+  role, 
   onLike, 
   onDelete, 
   onReply,
@@ -14,8 +15,8 @@ export default function CommentItem({
 
   const canDelete = 
     currentUser?.id === comment.author_id || 
-    currentUser?.user_metadata?.role === 'admin' ||
-    currentUser?.user_metadata?.role === 'counselor'
+    role === 'admin' ||
+    role === 'counselor'
 
   const handleReplyClick = () => {
     setShowReplyForm(!showReplyForm)

@@ -7,6 +7,7 @@ export default function CommentList({
   comments, 
   loading, 
   currentUser,
+  role,
   onCreateComment,
   onLikeComment,
   onDeleteComment
@@ -79,6 +80,7 @@ export default function CommentList({
               <CommentItem
                 comment={comment}
                 currentUser={currentUser}
+                role={role}
                 onLike={handleLike}
                 onDelete={handleDelete}
                 onReply={handleCreateReply}
@@ -93,6 +95,7 @@ export default function CommentList({
                       key={reply.id}
                       comment={reply}
                       currentUser={currentUser}
+                      role={role}
                       onLike={handleLike}
                       onDelete={handleDelete}
                       isReply={true}

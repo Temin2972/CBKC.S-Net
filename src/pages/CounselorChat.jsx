@@ -249,8 +249,8 @@ export default function CounselorChat() {
             </div>
           </div>
 
-          {/* Chat Area */}
-          <div className="lg:col-span-2">
+          {/* Chat Area - expands when notes hidden */}
+          <div className={showNotes && selectedRoom?.student_id ? 'lg:col-span-2' : 'lg:col-span-3'}>
             {!selectedRoom ? (
               <div className="bg-white rounded-2xl shadow-xl p-12 text-center h-full flex items-center justify-center">
                 <div>
