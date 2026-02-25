@@ -10,8 +10,7 @@ import {
   RefreshCw,
   ChevronRight,
   TrendingUp,
-  Home,
-  ArrowLeft
+  Home
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -20,29 +19,6 @@ import Navbar from '../components/Layout/Navbar'
 import Footer from '../components/Layout/Footer'
 import { Modal } from '../components/UI'
 import { ROUTES } from '../constants'
-
-// Card gradient colors for the stacked card look
-const CARD_GRADIENTS = [
-  'from-emerald-400 to-teal-500',
-  'from-teal-400 to-cyan-500',
-  'from-cyan-400 to-blue-500',
-  'from-sky-400 to-indigo-500',
-  'from-violet-400 to-purple-500',
-  'from-pink-400 to-rose-500',
-  'from-amber-400 to-orange-500',
-  'from-lime-400 to-green-500',
-]
-
-// Background colors for stacked cards behind
-const STACK_COLORS = [
-  'bg-blue-400',
-  'bg-pink-400',
-  'bg-orange-300',
-]
-
-function getCardGradient(index) {
-  return CARD_GRADIENTS[index % CARD_GRADIENTS.length]
-}
 
 export default function Cards() {
   const { id: userId, isCounselor } = useAuth()
@@ -193,8 +169,6 @@ export default function Cards() {
     }
   }
 
-  const cardGradient = getCardGradient(currentIndex)
-
   return (
     <div className="min-h-screen relative">
       {/* Background - matching other pages */}
@@ -256,133 +230,89 @@ export default function Cards() {
                 </div>
               )}
 
-              {/* Card Display - Stacked Cards */}
+              {/* Card Display */}
               {!loading && currentCard && (
-                <div className="card-stack-container">
-                  {/* Stacked cards */}
-                  <div className="relative flex items-center justify-center py-4">
-                    <div className="card-stack-wrapper">
-                      {/* Bottom card (furthest back) */}
-                      <div className={`card-behind card-behind-3 ${STACK_COLORS[0]} rounded-3xl`} />
-                      {/* Middle card */}
-                      <div className={`card-behind card-behind-2 ${STACK_COLORS[1]} rounded-3xl`} />
-                      {/* Second card */}
-                      <div className={`card-behind card-behind-1 ${STACK_COLORS[2]} rounded-3xl`} />
+                <div className="overflow-hidden">
+                  <div
+                    className={`
+                      card-content
+                      ${animState === 'leaving' ? 'card-leave' : ''}
+                      ${animState === 'entering' ? 'card-enter' : ''}
+                    `}
+                  >
+                    {/* Card Title */}
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 leading-tight">
+                      {currentCard.title || 'Thông điệp an lành'}
+                    </h1>
 
-                      {/* Top card (current) */}
-                      <div
-                        className={`
-                          card-front bg-gradient-to-br ${cardGradient} rounded-3xl shadow-2xl
-                          relative overflow-hidden
-                          ${animState === 'leaving' ? 'card-leave' : ''}
-                          ${animState === 'entering' ? 'card-enter' : ''}
-                        `}
-                      >
-                        {/* Badge */}
-                        <div className="absolute top-5 left-5">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/25 backdrop-blur-sm rounded-full text-white text-xs font-medium">
-                            <Sparkles size={12} />
-                            Thẻ {currentIndex + 1}/{shuffledCards.length}
-                          </span>
-                        </div>
+                    {/* Card Meta */}
+                    <div className="flex items-center gap-3 text-sm text-white/50 mb-6">
+                      <span>Thẻ {currentIndex + 1}/{shuffledCards.length}</span>
+                    </div>
 
-                        {/* Refresh button */}
+                    {/* Card Content Box */}
+                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 sm:p-8 mb-6 shadow-xl border border-white/10">
+                      <p className="text-white/90 text-lg sm:text-xl leading-relaxed whitespace-pre-wrap">
+                        {currentCard.content}
+                      </p>
+
+                      {currentCard.author && (
+                        <p className="mt-6 text-right text-teal-300/80 italic text-lg">
+                          — {currentCard.author}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Action Buttons Row */}
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+                      <div className="flex items-center gap-3">
                         <button
-                          onClick={goToNextCard}
-                          disabled={animState !== 'idle'}
-                          className="absolute top-5 right-5 w-10 h-10 bg-white/25 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/40 transition-colors disabled:opacity-50"
-                          aria-label="Next card"
+                          onClick={handleCopy}
+                          className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-sm hover:bg-white/20 rounded-xl text-white transition-colors border border-white/10"
                         >
-                          <RefreshCw size={18} className={animState !== 'idle' ? 'animate-spin' : ''} />
+                          {copied ? (
+                            <>
+                              <Check size={18} className="text-green-300" />
+                              <span className="text-green-300">Đã sao chép</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={18} />
+                              <span className="hidden sm:inline">Sao chép</span>
+                            </>
+                          )}
                         </button>
 
-                        {/* Card Content */}
-                        <div className="flex flex-col items-center justify-center text-center px-8 pt-20 pb-8 min-h-[380px] sm:min-h-[420px]">
-                          {/* Icon */}
-                          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-6">
-                            <Heart size={32} className="text-white" />
-                          </div>
-
-                          {/* Title */}
-                          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight italic">
-                            {currentCard.title || 'Thông điệp an lành'}
-                          </h2>
-
-                          {/* Content */}
-                          <p className="text-white/90 text-base sm:text-lg leading-relaxed max-w-md whitespace-pre-wrap">
-                            {currentCard.content}
-                          </p>
-
-                          {/* Author */}
-                          {currentCard.author && (
-                            <p className="mt-6 text-white/70 italic">
-                              — {currentCard.author}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Previous button */}
-                        <div className="absolute bottom-5 left-5">
-                          <button
-                            onClick={goToNextCard}
-                            disabled={animState !== 'idle'}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-white/25 backdrop-blur-sm rounded-full text-white text-sm font-medium hover:bg-white/40 transition-colors disabled:opacity-50"
-                          >
-                            <ArrowLeft size={14} />
-                            Thẻ khác
-                          </button>
-                        </div>
+                        <button
+                          onClick={handleShare}
+                          className="flex items-center gap-2 px-4 py-2.5 bg-teal-500 hover:bg-teal-600 rounded-xl text-white transition-colors shadow-lg shadow-teal-500/20"
+                        >
+                          <Share2 size={18} />
+                          <span className="hidden sm:inline">Chia sẻ</span>
+                        </button>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Actions below the card */}
-                  <div className="flex flex-wrap items-center justify-center gap-3 mt-6 mb-6">
-                    <button
-                      onClick={handleCopy}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-sm hover:bg-white/20 rounded-xl text-white transition-colors border border-white/10"
-                    >
-                      {copied ? (
-                        <>
-                          <Check size={18} className="text-green-300" />
-                          <span className="text-green-300">Đã sao chép</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={18} />
-                          <span>Sao chép</span>
-                        </>
+                      {isCounselor && (
+                        <button
+                          onClick={() => setShowAddModal(true)}
+                          className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-sm hover:bg-white/20 rounded-xl text-white transition-colors border border-white/10"
+                        >
+                          <Plus size={18} />
+                          <span className="hidden sm:inline">Thêm thẻ</span>
+                        </button>
                       )}
-                    </button>
+                    </div>
 
+                    {/* Read Another Card Button */}
                     <button
-                      onClick={handleShare}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-teal-500 hover:bg-teal-600 rounded-xl text-white transition-colors shadow-lg shadow-teal-500/20"
+                      onClick={goToNextCard}
+                      disabled={animState !== 'idle'}
+                      className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-teal-500 hover:bg-teal-600 rounded-2xl text-white font-semibold text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-500/20"
                     >
-                      <Share2 size={18} />
-                      <span>Chia sẻ</span>
+                      <RefreshCw size={22} className={animState !== 'idle' ? 'animate-spin' : ''} />
+                      Đọc thẻ khác
                     </button>
-
-                    {isCounselor && (
-                      <button
-                        onClick={() => setShowAddModal(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-white/10 backdrop-blur-sm hover:bg-white/20 rounded-xl text-white transition-colors border border-white/10"
-                      >
-                        <Plus size={18} />
-                        <span>Thêm thẻ</span>
-                      </button>
-                    )}
                   </div>
-
-                  {/* Read Another Card Button */}
-                  <button
-                    onClick={goToNextCard}
-                    disabled={animState !== 'idle'}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-teal-500 hover:bg-teal-600 rounded-2xl text-white font-semibold text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-500/20"
-                  >
-                    <RefreshCw size={22} className={animState !== 'idle' ? 'animate-spin' : ''} />
-                    Đọc thẻ khác
-                  </button>
                 </div>
               )}
             </div>
@@ -538,39 +468,9 @@ export default function Cards() {
         </div>
       </Modal>
 
-      {/* Stacked Card Animation Styles */}
+      {/* Card Swipe Animation Styles */}
       <style>{`
-        .card-stack-wrapper {
-          position: relative;
-          width: 100%;
-          max-width: 420px;
-          margin: 0 auto;
-        }
-
-        .card-behind {
-          position: absolute;
-          inset: 0;
-          opacity: 0.7;
-        }
-
-        .card-behind-3 {
-          transform: translateX(-24px) rotate(-6deg);
-          z-index: 1;
-        }
-
-        .card-behind-2 {
-          transform: translateX(-14px) rotate(-3.5deg);
-          z-index: 2;
-        }
-
-        .card-behind-1 {
-          transform: translateX(-6px) rotate(-1.5deg);
-          z-index: 3;
-        }
-
-        .card-front {
-          position: relative;
-          z-index: 4;
+        .card-content {
           transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
                       opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
