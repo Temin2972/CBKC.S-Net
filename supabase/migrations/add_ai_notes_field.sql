@@ -1,63 +1,67 @@
 -- =====================================================
 -- AI NOTES FIELD FOR STUDENT_NOTES
--- Allows AI assessments to be stored separately from counselor notes
+-- Allows AI assessments to be stored in content column
 -- Run this in Supabase SQL Editor
 -- =====================================================
 
--- Add AI notes field (separate from counselor's manual notes)
-ALTER TABLE student_notes 
-ADD COLUMN IF NOT EXISTS ai_notes TEXT DEFAULT '';
-
--- Add timestamp for AI notes
-ALTER TABLE student_notes 
-ADD COLUMN IF NOT EXISTS ai_notes_updated_at TIMESTAMPTZ;
-
--- Comment for documentation
-COMMENT ON COLUMN student_notes.ai_notes IS 'AI-generated assessment notes, updated automatically during chat';
-COMMENT ON COLUMN student_notes.content IS 'Manual notes written by counselors';
-
 -- =====================================================
 -- UPDATE RLS POLICIES
--- Allow students to insert/update their own AI notes only
+-- Fix policies for counselors and students
 -- =====================================================
 
--- Drop existing policies (if they exist) to recreate them
+-- Drop ALL existing policies to recreate them properly
+DROP POLICY IF EXISTS "notes_select_staff" ON student_notes;
 DROP POLICY IF EXISTS "notes_insert_staff" ON student_notes;
 DROP POLICY IF EXISTS "notes_update_staff" ON student_notes;
 DROP POLICY IF EXISTS "notes_insert_ai" ON student_notes;
 DROP POLICY IF EXISTS "notes_update_ai" ON student_notes;
 
--- Staff can insert any notes
+-- =====================================================
+-- COUNSELOR/ADMIN POLICIES (full access)
+-- =====================================================
+
+-- Staff can SELECT any notes
+CREATE POLICY "notes_select_staff" ON student_notes
+    FOR SELECT USING (
+        EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('counselor', 'admin'))
+    );
+
+-- Staff can INSERT any notes
 CREATE POLICY "notes_insert_staff" ON student_notes
     FOR INSERT WITH CHECK (
         EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('counselor', 'admin'))
     );
 
--- Staff can update any notes
+-- Staff can UPDATE any notes
 CREATE POLICY "notes_update_staff" ON student_notes
     FOR UPDATE USING (
         EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('counselor', 'admin'))
+    )
+    WITH CHECK (
+        EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('counselor', 'admin'))
     );
 
--- Students can insert their own AI notes (for new records)
-CREATE POLICY "notes_insert_ai" ON student_notes
+-- =====================================================
+-- STUDENT POLICIES (can only manage their own notes when updated_by is null)
+-- This allows AI to insert/update notes on behalf of students
+-- =====================================================
+
+-- Students can SELECT their own notes
+CREATE POLICY "notes_select_student" ON student_notes
+    FOR SELECT USING (
+        student_id = auth.uid()
+    );
+
+-- Students can INSERT their own notes (for AI assessments)
+CREATE POLICY "notes_insert_student" ON student_notes
     FOR INSERT WITH CHECK (
         student_id = auth.uid()
     );
 
--- Students can update ONLY their own ai_notes field
--- This uses a security definer function to restrict what they can change
-CREATE OR REPLACE FUNCTION student_can_update_ai_notes(note_student_id UUID)
-RETURNS BOOLEAN AS $$
-BEGIN
-    -- Student can only update their own notes
-    RETURN note_student_id = auth.uid();
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
-
-CREATE POLICY "notes_update_ai" ON student_notes
+-- Students can UPDATE their own notes ONLY if no counselor has edited yet (updated_by is null)
+CREATE POLICY "notes_update_student" ON student_notes
     FOR UPDATE USING (
-        student_id = auth.uid()
+        student_id = auth.uid() AND updated_by IS NULL
     )
     WITH CHECK (
         student_id = auth.uid()

@@ -1,21 +1,25 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { 
-  ChevronLeft, 
-  ChevronRight, 
   Copy, 
   Share2, 
   Check, 
   Plus,
-  X,
   Loader2,
   Sparkles,
-  Heart
+  Heart,
+  RefreshCw,
+  ChevronRight,
+  MessageCircle,
+  TrendingUp,
+  Home
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useCards } from '../hooks/useCards'
 import Navbar from '../components/Layout/Navbar'
 import Footer from '../components/Layout/Footer'
-import { Button, Modal } from '../components/UI'
+import { Modal } from '../components/UI'
+import { ROUTES } from '../constants'
 
 export default function Cards() {
   const { id: userId, isCounselor } = useAuth()
@@ -23,18 +27,18 @@ export default function Cards() {
   
   const [shuffledCards, setShuffledCards] = useState([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [viewedIds, setViewedIds] = useState(new Set()) // Track viewed cards
+  const [viewedIds, setViewedIds] = useState(new Set())
   const [copied, setCopied] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [newCardTitle, setNewCardTitle] = useState('')
   const [newCardContent, setNewCardContent] = useState('')
   const [newCardAuthor, setNewCardAuthor] = useState('')
-  const [swipeDirection, setSwipeDirection] = useState(null)
+  const [isFlipping, setIsFlipping] = useState(false)
+  const [flipDirection, setFlipDirection] = useState('next') // 'next' or 'prev'
   
   // Touch/swipe handling
   const touchStartX = useRef(0)
   const touchEndX = useRef(0)
-  const cardRef = useRef(null)
 
   // Initialize shuffled cards
   useEffect(() => {
@@ -46,16 +50,20 @@ export default function Cards() {
 
   const currentCard = shuffledCards[currentIndex]
 
+  // Get popular cards for sidebar (first 5 cards or random selection)
+  const popularCards = useMemo(() => {
+    if (cards.length === 0) return []
+    return cards.slice(0, 5)
+  }, [cards])
+
   // Get next random card that hasn't been viewed yet
   const getNextRandomIndex = useCallback(() => {
     if (shuffledCards.length === 0) return 0
     
-    // Get all unviewed indices except current
     const unviewedIndices = shuffledCards
       .map((_, idx) => idx)
       .filter(idx => idx !== currentIndex && !viewedIds.has(shuffledCards[idx]?.id))
     
-    // If all cards have been viewed, reset and reshuffle
     if (unviewedIndices.length === 0) {
       setViewedIds(new Set())
       const allIndices = shuffledCards.map((_, idx) => idx).filter(idx => idx !== currentIndex)
@@ -66,33 +74,44 @@ export default function Cards() {
     return unviewedIndices[Math.floor(Math.random() * unviewedIndices.length)]
   }, [shuffledCards, currentIndex, viewedIds])
 
-  // Navigate to previous card (random unviewed)
-  const goToPrevious = useCallback(() => {
-    if (shuffledCards.length === 0) return
-    setSwipeDirection('right')
+  // Navigate to next random card with flip animation
+  const goToNextCard = useCallback(() => {
+    if (shuffledCards.length === 0 || isFlipping) return
+    
+    setFlipDirection('next')
+    setIsFlipping(true)
+    
     setTimeout(() => {
       const nextIdx = getNextRandomIndex()
       if (currentCard) {
         setViewedIds(prev => new Set([...prev, currentCard.id]))
       }
       setCurrentIndex(nextIdx)
-      setSwipeDirection(null)
-    }, 150)
-  }, [shuffledCards.length, getNextRandomIndex, currentCard])
+      
+      setTimeout(() => {
+        setIsFlipping(false)
+      }, 300)
+    }, 300)
+  }, [shuffledCards.length, getNextRandomIndex, currentCard, isFlipping])
 
-  // Navigate to next card (random unviewed)
-  const goToNext = useCallback(() => {
-    if (shuffledCards.length === 0) return
-    setSwipeDirection('left')
+  // Go to specific card
+  const goToCard = useCallback((index) => {
+    if (index === currentIndex || isFlipping) return
+    
+    setFlipDirection(index > currentIndex ? 'next' : 'prev')
+    setIsFlipping(true)
+    
     setTimeout(() => {
-      const nextIdx = getNextRandomIndex()
       if (currentCard) {
         setViewedIds(prev => new Set([...prev, currentCard.id]))
       }
-      setCurrentIndex(nextIdx)
-      setSwipeDirection(null)
-    }, 150)
-  }, [shuffledCards.length, getNextRandomIndex, currentCard])
+      setCurrentIndex(index)
+      
+      setTimeout(() => {
+        setIsFlipping(false)
+      }, 300)
+    }, 300)
+  }, [currentIndex, currentCard, isFlipping])
 
   // Handle touch start
   const handleTouchStart = (e) => {
@@ -110,23 +129,20 @@ export default function Cards() {
     const diff = touchStartX.current - touchEndX.current
 
     if (Math.abs(diff) > swipeThreshold) {
-      if (diff > 0) {
-        goToNext() // Swiped left
-      } else {
-        goToPrevious() // Swiped right
-      }
+      goToNextCard()
     }
   }
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'ArrowLeft') goToPrevious()
-      if (e.key === 'ArrowRight') goToNext()
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        goToNextCard()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [goToPrevious, goToNext])
+  }, [goToNextCard])
 
   // Copy card content to clipboard
   const handleCopy = async () => {
@@ -156,7 +172,6 @@ export default function Cards() {
       if (navigator.share && navigator.canShare(shareData)) {
         await navigator.share(shareData)
       } else {
-        // Fallback: copy to clipboard
         await navigator.clipboard.writeText(shareText)
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
@@ -176,174 +191,245 @@ export default function Cards() {
       setNewCardContent('')
       setNewCardAuthor('')
       setShowAddModal(false)
-      // Refresh shuffled cards
       setShuffledCards(prev => [result.card, ...prev])
     }
   }
 
+  // Format date
+  const formatDate = () => {
+    const now = new Date()
+    const options = { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }
+    const formatted = now.toLocaleDateString('vi-VN', options)
+    const time = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+    return `${formatted}, ${time} (GMT+7)`
+  }
+
   return (
-    <div className="min-h-screen relative">
-      {/* Background */}
-      <div
-        className="fixed inset-0 z-0"
-        style={{
-          backgroundImage: `url('/images/flying.jpg')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          filter: 'blur(3px) brightness(0.9)'
-        }}
-      />
-      <div className="fixed inset-0 z-0 bg-gradient-to-br from-rose-900/20 via-pink-800/10 to-purple-900/20" />
+    <div className="min-h-screen bg-[#2a2a2a]">
+      <Navbar />
 
-      <div className="relative z-10">
-        <Navbar />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm mb-6">
+          <Link to={ROUTES.HOME} className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1">
+            <Home size={14} />
+            Trang chủ
+          </Link>
+          <ChevronRight size={14} className="text-gray-500" />
+          <span className="text-amber-400">Thông điệp an lành</span>
+          <span className="ml-auto text-gray-400 text-xs hidden sm:block">{formatDate()}</span>
+        </div>
 
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm mb-4">
-              <Sparkles size={16} />
-              <span>Thông điệp an lành</span>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-              Cards <Heart className="inline-block text-pink-400 fill-current" size={32} />
-            </h1>
-            <p className="text-white/80">
-              Vuốt trái/phải hoặc dùng nút điều hướng để xem các thẻ
-            </p>
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Main Content */}
+          <div className="flex-1 min-w-0">
+            {/* Loading State */}
+            {loading && (
+              <div className="flex items-center justify-center py-20">
+                <div className="text-center">
+                  <Loader2 className="animate-spin text-amber-400 mx-auto mb-4" size={48} />
+                  <p className="text-gray-400">Đang tải thẻ...</p>
+                </div>
+              </div>
+            )}
+
+            {/* No Cards State */}
+            {!loading && shuffledCards.length === 0 && (
+              <div className="bg-[#3a3a3a] rounded-2xl p-12 text-center">
+                <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="text-amber-400" size={40} />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">Chưa có thẻ nào</h2>
+                <p className="text-gray-400 mb-6">Hãy tạo thẻ đầu tiên để bắt đầu chia sẻ thông điệp an lành.</p>
+                {isCounselor && (
+                  <button
+                    onClick={() => setShowAddModal(true)}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition-colors"
+                  >
+                    <Plus size={20} />
+                    Tạo thẻ đầu tiên
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Card Display */}
+            {!loading && currentCard && (
+              <div className="perspective-1000">
+                {/* Card Container with 3D Flip */}
+                <div
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  className={`
+                    transform-style-3d transition-transform duration-500 ease-in-out
+                    ${isFlipping ? (flipDirection === 'next' ? 'rotate-y-90' : '-rotate-y-90') : 'rotate-y-0'}
+                  `}
+                >
+                  {/* Main Title */}
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-amber-100 mb-6 leading-tight">
+                    {currentCard.title || 'Thông điệp an lành'}
+                  </h1>
+
+                  {/* Card Meta */}
+                  <div className="flex items-center gap-3 text-sm text-gray-400 mb-6">
+                    <span className="text-amber-400 font-medium">S-NET</span>
+                    <span>—</span>
+                    <span>Thẻ {currentIndex + 1}/{shuffledCards.length}</span>
+                    {viewedIds.size > 0 && (
+                      <>
+                        <span>•</span>
+                        <span>Đã xem: {viewedIds.size}</span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Card Content Box */}
+                  <div className="bg-[#3a3a3a] rounded-2xl p-6 sm:p-8 mb-6 shadow-xl border border-gray-700/50">
+                    {/* Content */}
+                    <div className="prose prose-lg prose-invert max-w-none">
+                      <p className="text-gray-200 text-lg sm:text-xl leading-relaxed whitespace-pre-wrap">
+                        {currentCard.content}
+                      </p>
+                    </div>
+
+                    {/* Author */}
+                    {currentCard.author && (
+                      <p className="mt-6 text-right text-amber-400/80 italic text-lg">
+                        — {currentCard.author}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Action Buttons Row */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleCopy}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[#3a3a3a] hover:bg-[#4a4a4a] rounded-xl text-gray-300 transition-colors border border-gray-700/50"
+                      >
+                        {copied ? (
+                          <>
+                            <Check size={18} className="text-green-400" />
+                            <span className="text-green-400">Đã sao chép</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={18} />
+                            <span className="hidden sm:inline">Sao chép</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={handleShare}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 rounded-xl text-white transition-colors"
+                      >
+                        <Share2 size={18} />
+                        <span className="hidden sm:inline">Chia sẻ</span>
+                      </button>
+                    </div>
+
+                    {isCounselor && (
+                      <button
+                        onClick={() => setShowAddModal(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[#3a3a3a] hover:bg-[#4a4a4a] rounded-xl text-gray-300 transition-colors border border-gray-700/50"
+                      >
+                        <Plus size={18} />
+                        <span className="hidden sm:inline">Thêm thẻ</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Read Another Card Button */}
+                  <button
+                    onClick={goToNextCard}
+                    disabled={isFlipping}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-2xl text-white font-semibold text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-500/20"
+                  >
+                    <RefreshCw size={22} className={isFlipping ? 'animate-spin' : ''} />
+                    Đọc thẻ khác
+                    <Sparkles size={18} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Loading State */}
-          {loading && (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="animate-spin text-white" size={48} />
-            </div>
-          )}
+          {/* Sidebar */}
+          <div className="lg:w-80 flex-shrink-0">
+            {/* Popular Cards Section */}
+            <div className="bg-[#3a3a3a] rounded-2xl p-5 border border-gray-700/50">
+              <h3 className="text-lg font-bold text-amber-400 mb-4 flex items-center gap-2">
+                <TrendingUp size={20} />
+                Xem nhiều
+              </h3>
 
-          {/* No Cards State */}
-          {!loading && shuffledCards.length === 0 && (
-            <div className="text-center py-20">
-              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="text-white" size={40} />
-              </div>
-              <p className="text-white/80 text-lg">Chưa có thẻ nào được tạo.</p>
-              {isCounselor && (
-                <Button
-                  onClick={() => setShowAddModal(true)}
-                  className="mt-4"
-                  variant="primary"
-                >
-                  <Plus size={20} />
-                  Tạo thẻ đầu tiên
-                </Button>
-              )}
-            </div>
-          )}
-
-          {/* Card Display */}
-          {!loading && currentCard && (
-            <div className="relative">
-              {/* Navigation Buttons */}
-              <button
-                onClick={goToPrevious}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-16 z-20 w-12 h-12 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:text-gray-900 transition-all hover:scale-110"
-                aria-label="Previous card"
-              >
-                <ChevronLeft size={24} />
-              </button>
-
-              <button
-                onClick={goToNext}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-16 z-20 w-12 h-12 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:text-gray-900 transition-all hover:scale-110"
-                aria-label="Next card"
-              >
-                <ChevronRight size={24} />
-              </button>
-
-              {/* Card */}
-              <div
-                ref={cardRef}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                className={`
-                  bg-white rounded-3xl shadow-2xl p-8 md:p-12 mx-auto max-w-2xl
-                  transition-all duration-150 ease-out
-                  ${swipeDirection === 'left' ? '-translate-x-8 opacity-0' : ''}
-                  ${swipeDirection === 'right' ? 'translate-x-8 opacity-0' : ''}
-                `}
-              >
-                {/* Card Title */}
-                {currentCard.title && (
-                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
-                    {currentCard.title}
-                  </h2>
-                )}
-
-                {/* Card Content - Scrollable */}
-                <div className="max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
-                  <p className="text-gray-700 text-lg md:text-xl leading-relaxed whitespace-pre-wrap">
-                    {currentCard.content}
-                  </p>
-                </div>
-
-                {/* Card Author */}
-                {currentCard.author && (
-                  <p className="mt-6 text-right text-gray-500 italic">
-                    — {currentCard.author}
-                  </p>
-                )}
-
-                {/* Card Footer */}
-                <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-end">
-                  {/* Action Buttons */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={handleCopy}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition-colors"
-                    >
-                      {copied ? (
-                        <>
-                          <Check size={18} className="text-green-500" />
-                          <span className="text-green-600">Đã sao chép</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={18} />
-                          <span>Sao chép</span>
-                        </>
+              <div className="space-y-4">
+                {popularCards.map((card, index) => (
+                  <button
+                    key={card.id}
+                    onClick={() => {
+                      const cardIndex = shuffledCards.findIndex(c => c.id === card.id)
+                      if (cardIndex !== -1) goToCard(cardIndex)
+                    }}
+                    className={`
+                      w-full flex gap-3 p-3 rounded-xl text-left transition-all
+                      ${currentCard?.id === card.id 
+                        ? 'bg-amber-500/20 border border-amber-500/50' 
+                        : 'hover:bg-[#4a4a4a] border border-transparent'}
+                    `}
+                  >
+                    {/* Thumbnail/Icon */}
+                    <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-amber-500/30 to-orange-500/30 flex items-center justify-center flex-shrink-0">
+                      <Heart size={24} className="text-amber-400" />
+                    </div>
+                    
+                    {/* Card Info */}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-gray-200 line-clamp-2 mb-1">
+                        {card.title || card.content.substring(0, 50) + '...'}
+                      </h4>
+                      {card.author && (
+                        <p className="text-xs text-gray-500 truncate">
+                          — {card.author}
+                        </p>
                       )}
-                    </button>
+                      <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                        <MessageCircle size={12} />
+                        <span>{index * 47 + 31}</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
 
-                    <button
-                      onClick={handleShare}
-                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 rounded-full text-white transition-colors"
-                    >
-                      <Share2 size={18} />
-                      <span>Chia sẻ</span>
-                    </button>
-                  </div>
+                {popularCards.length === 0 && !loading && (
+                  <p className="text-gray-500 text-sm text-center py-4">
+                    Chưa có thẻ nào
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Info Card */}
+            <div className="mt-6 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-2xl p-5 border border-amber-500/20">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <Sparkles size={20} className="text-amber-400" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-amber-300 mb-1">Thông điệp an lành</h4>
+                  <p className="text-sm text-gray-400 leading-relaxed">
+                    Vuốt trái/phải hoặc nhấn nút "Đọc thẻ khác" để khám phá những thông điệp tích cực mỗi ngày.
+                  </p>
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        </div>
+      </main>
 
-          {/* Add Card Button for Counselors */}
-          {isCounselor && !loading && shuffledCards.length > 0 && (
-            <div className="mt-8 text-center">
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full text-white transition-colors"
-              >
-                <Plus size={20} />
-                Thêm thẻ mới
-              </button>
-            </div>
-          )}
-        </main>
-
-        <Footer />
-      </div>
+      <Footer />
 
       {/* Add Card Modal */}
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Tạo thẻ mới">
@@ -352,92 +438,101 @@ export default function Cards() {
             Viết một thông điệp an lành để chia sẻ với các học sinh.
           </p>
 
-            {/* Title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tiêu đề <span className="text-gray-400">(tùy chọn)</span>
-              </label>
-              <input
-                type="text"
-                value={newCardTitle}
-                onChange={(e) => setNewCardTitle(e.target.value)}
-                placeholder="Tiêu đề của thẻ..."
-                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                maxLength={200}
-              />
-            </div>
-
-            {/* Content */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nội dung <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={newCardContent}
-                onChange={(e) => setNewCardContent(e.target.value)}
-                placeholder="Viết thông điệp của bạn tại đây..."
-                className="w-full h-48 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"
-              />
-            </div>
-
-            {/* Author */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tác giả <span className="text-gray-400">(tùy chọn)</span>
-              </label>
-              <input
-                type="text"
-                value={newCardAuthor}
-                onChange={(e) => setNewCardAuthor(e.target.value)}
-                placeholder="Tên tác giả hoặc nguồn..."
-                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                maxLength={100}
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-4">
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleCreateCard}
-                disabled={!newCardContent.trim() || creating}
-                className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg hover:from-pink-600 hover:to-rose-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {creating ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    Đang tạo...
-                  </>
-                ) : (
-                  <>
-                    <Plus size={18} />
-                    Tạo thẻ
-                  </>
-                )}
-              </button>
-            </div>
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tiêu đề <span className="text-gray-400">(tùy chọn)</span>
+            </label>
+            <input
+              type="text"
+              value={newCardTitle}
+              onChange={(e) => setNewCardTitle(e.target.value)}
+              placeholder="Tiêu đề của thẻ..."
+              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              maxLength={200}
+            />
           </div>
-        </Modal>
 
-      {/* Custom Scrollbar Styles */}
+          {/* Content */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nội dung <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={newCardContent}
+              onChange={(e) => setNewCardContent(e.target.value)}
+              placeholder="Viết thông điệp của bạn tại đây..."
+              className="w-full h-48 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
+            />
+          </div>
+
+          {/* Author */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tác giả <span className="text-gray-400">(tùy chọn)</span>
+            </label>
+            <input
+              type="text"
+              value={newCardAuthor}
+              onChange={(e) => setNewCardAuthor(e.target.value)}
+              placeholder="Tên tác giả hoặc nguồn..."
+              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              maxLength={100}
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-3 pt-4">
+            <button
+              onClick={() => setShowAddModal(false)}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={handleCreateCard}
+              disabled={!newCardContent.trim() || creating}
+              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {creating ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Đang tạo...
+                </>
+              ) : (
+                <>
+                  <Plus size={18} />
+                  Tạo thẻ
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 3D Flip Animation Styles */}
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
+        .perspective-1000 {
+          perspective: 1000px;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
+        .transform-style-3d {
+          transform-style: preserve-3d;
+          backface-visibility: hidden;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #d1d5db;
-          border-radius: 3px;
+        .rotate-y-0 {
+          transform: rotateY(0deg);
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #9ca3af;
+        .rotate-y-90 {
+          transform: rotateY(90deg);
+        }
+        .-rotate-y-90 {
+          transform: rotateY(-90deg);
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
       `}</style>
     </div>
