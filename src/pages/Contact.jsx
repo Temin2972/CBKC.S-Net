@@ -48,7 +48,7 @@ const CONTACT_METHODS = [
   {
     icon: Clock,
     title: 'Giờ làm việc',
-    value: '8:00 - 17:00',
+    value: '7:30 - 16:45',
     note: 'Thứ 2 - Thứ 6',
     color: 'from-amber-400 to-orange-500'
   }

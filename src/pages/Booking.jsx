@@ -96,7 +96,7 @@ export default function Booking() {
                 <div className="space-y-2 text-sm text-gray-600">
                   <p className="flex items-center gap-2">
                     <span className="font-semibold text-gray-800">Thứ 2 - Thứ 6:</span>
-                    <span>8:00 - 17:00</span>
+                    <span>7:30 - 16:45</span>
                   </p>
                   <p className="flex items-center gap-2">
                     <span className="font-semibold text-gray-800">Thứ 7 - CN:</span>
@@ -115,8 +115,8 @@ export default function Booking() {
                 </div>
                 <p className="text-sm text-gray-600">
                   Phòng Tham vấn Tâm lý<br />
-                  Tầng [X], Tòa nhà [Y]<br />
-                  FPT School
+                  Tầng 1, Tòa nhà Gamma<br />
+                  THPT FPT Hà Nội, Khu Công nghệ cao Hòa Lạc
                 </p>
               </div>
 

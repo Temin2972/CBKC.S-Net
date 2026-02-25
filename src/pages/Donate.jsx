@@ -15,31 +15,6 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-const DONATION_TIERS = [
-  {
-    name: 'Cà phê',
-    amount: '20.000đ',
-    icon: Coffee,
-    description: 'Mua cho team một ly cà phê',
-    color: 'from-amber-400 to-orange-500'
-  },
-  {
-    name: 'Bữa trưa',
-    amount: '50.000đ',
-    icon: Gift,
-    description: 'Hỗ trợ chi phí vận hành',
-    color: 'from-teal-400 to-cyan-500',
-    popular: true
-  },
-  {
-    name: 'Server',
-    amount: '100.000đ',
-    icon: Sparkles,
-    description: 'Đóng góp chi phí server',
-    color: 'from-purple-400 to-pink-500'
-  }
-]
-
 const BENEFITS = [
   'Hỗ trợ duy trì và phát triển S-Net',
   'Giúp đỡ nhiều học sinh hơn',
@@ -49,9 +24,9 @@ const BENEFITS = [
 ]
 
 const BANK_INFO = {
-  bank: 'Vietcombank',
-  accountNumber: '1234567890',
-  accountName: 'NGUYEN VAN A',
+  bank: 'MBBank',
+  accountNumber: '02127928888',
+  accountName: 'NGO MINH CHIEN',
   branch: 'Chi nhánh Hà Nội'
 }
 
@@ -90,30 +65,6 @@ export default function Donate() {
               Mọi đóng góp đều giúp chúng tôi duy trì và phát triển nền tảng, 
               mang đến sự hỗ trợ tâm lý cho nhiều học sinh hơn.
             </p>
-          </div>
-
-          {/* Donation Tiers */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            {DONATION_TIERS.map((tier, index) => (
-              <div 
-                key={index}
-                className={`relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 ${
-                  tier.popular ? 'ring-2 ring-teal-500' : ''
-                }`}
-              >
-                {tier.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-teal-500 text-white text-xs font-medium rounded-full">
-                    Phổ biến
-                  </div>
-                )}
-                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${tier.color} flex items-center justify-center mb-4`}>
-                  <tier.icon className="text-white" size={32} />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-1">{tier.name}</h3>
-                <p className="text-3xl font-bold text-teal-600 mb-2">{tier.amount}</p>
-                <p className="text-gray-500">{tier.description}</p>
-              </div>
-            ))}
           </div>
 
           {/* Benefits */}
