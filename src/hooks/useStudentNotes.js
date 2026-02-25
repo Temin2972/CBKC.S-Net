@@ -29,7 +29,7 @@ export function useStudentNotes(studentId) {
                 throw error
             } else if (!data) {
                 // No notes exist yet, that's okay
-                setNotes({ content: '', ai_notes: '', student_id: studentId })
+                setNotes({ content: '', student_id: studentId })
             } else {
                 // If there's an updated_by, fetch the user name separately
                 if (data.updated_by) {
