@@ -8,7 +8,7 @@ import {
   MessageCircle,
   Users,
   Shield,
-  Bell,
+  Calendar,
   User,
   Heart,
   ChevronDown,
@@ -52,7 +52,7 @@ const GUIDE_SECTIONS = [
     description: 'S-Net là cầu nối giữa học sinh và các chuyên gia tâm lý tại trường. Hãy cùng khám phá các tính năng giúp bạn được lắng nghe và hỗ trợ.',
     icon: Heart,
     color: 'from-teal-400 to-cyan-500',
-    media: null // Example: { type: 'image', src: 'welcome.png' }
+    media: { type: 'image', src: 'home.png' } // Example: { type: 'image', src: 'welcome.png' }
   },
   {
     id: 'chat',
@@ -67,7 +67,7 @@ const GUIDE_SECTIONS = [
       'Lưu lịch sử tin nhắn an toàn',
       'Thông báo khi có phản hồi'
     ],
-    media: null // Example: { type: 'video', src: 'chat-demo.mp4' }
+    media: { type: 'image', src: 'chat.png' } // Example: { type: 'video', src: 'chat-demo.mp4' }
   },
   {
     id: 'community',
@@ -82,10 +82,7 @@ const GUIDE_SECTIONS = [
       'AI kiểm duyệt nội dung độc hại',
       'Tư vấn viên theo dõi và hỗ trợ'
     ],
-    media: {
-      type: 'image',
-      src: 'library.jpg'
-    }
+    media: { type: 'image', src: 'community.png' }
   },
   {
     id: 'anonymous',
@@ -100,10 +97,7 @@ const GUIDE_SECTIONS = [
       'Chỉ tư vấn viên mới biết danh tính (bảo mật)',
       'Bạn có thể tắt/bật bất cứ lúc nào'
     ],
-    media: {
-      type: 'video',
-      src: 'test.mp4'
-    }
+    media: { type: 'image', src: 'community.png' }
   },
   {
     id: 'survey',
@@ -118,22 +112,22 @@ const GUIDE_SECTIONS = [
       'Góp ý website',
       'Đề xuất tính năng mới'
     ],
-    media: null
+    media: { type: 'image', src: 'feedback.png' }
   },
   {
-    id: 'notifications',
-    title: 'Thông báo',
-    subtitle: 'Không bỏ lỡ tin nhắn quan trọng',
-    description: 'Nhận thông báo khi có tin nhắn mới, bình luận hoặc cập nhật từ tư vấn viên.',
-    icon: Bell,
-    color: 'from-rose-400 to-red-500',
+    id: 'booking',
+    title: 'Đặt lịch',
+    subtitle: 'Đặt lịch tư vấn trực tuyến',
+    description: 'Đặt lịch tư vấn trực tuyến với tư vấn viên.',
+    icon: Calendar,
+    color: 'from-blue-400 to-indigo-500',
     features: [
-      'Thông báo tin nhắn mới',
-      'Thông báo bình luận',
-      'Badge hiển thị số chưa đọc',
-      'Có thể bật thông báo trình duyệt'
+      'Đặt lịch tư vấn trực tuyến',
+      '2',
+      'Đặt lịch tư vấn offline',
+      '4'
     ],
-    media: null
+    media: { type: 'image', src: 'booking.png' }
   },
   {
     id: 'start',
@@ -196,7 +190,7 @@ function MediaDisplay({ media }) {
       <div className="w-full lg:w-[85%] mx-auto aspect-video bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 mb-8">
         <div className="text-center">
           <ImageIcon size={40} className="mx-auto mb-2 text-gray-300" />
-          <span>Hình ảnh / Video minh họa sẽ được thêm sau</span>
+          <span>Hình ảnh / Video minh họa</span>
         </div>
       </div>
     )
