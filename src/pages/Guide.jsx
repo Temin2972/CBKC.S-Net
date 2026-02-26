@@ -12,7 +12,6 @@ import {
   User,
   Heart,
   ChevronDown,
-  CheckCircle2,
   ArrowRight,
   Sparkles,
   Lock,
@@ -194,7 +193,7 @@ function MediaDisplay({ media }) {
   // No media configured — show placeholder
   if (!media || !media.src) {
     return (
-      <div className="w-full lg:w-[65%] mx-auto aspect-video bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 mb-8">
+      <div className="w-full lg:w-[85%] mx-auto aspect-video bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 mb-8">
         <div className="text-center">
           <ImageIcon size={40} className="mx-auto mb-2 text-gray-300" />
           <span>Hình ảnh / Video minh họa sẽ được thêm sau</span>
@@ -207,7 +206,7 @@ function MediaDisplay({ media }) {
 
   if (media.type === 'video') {
     return (
-      <div className="w-full lg:w-[65%] mx-auto rounded-2xl overflow-hidden shadow-lg mb-8">
+      <div className="w-full lg:w-[85%] mx-auto rounded-2xl overflow-hidden shadow-lg mb-8">
         <video
           ref={videoRef}
           src={fullSrc}
@@ -325,7 +324,7 @@ export default function Guide() {
                       key={i}
                       className="flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-xl px-4 py-3 shadow-sm"
                     >
-                      <CheckCircle2 size={20} className="text-teal-500 flex-shrink-0" />
+                      <span className={`w-2.5 h-2.5 rounded-full bg-gradient-to-br ${section.color} flex-shrink-0`} />
                       <span className="text-gray-700 text-left">{feature}</span>
                     </div>
                   ))}
