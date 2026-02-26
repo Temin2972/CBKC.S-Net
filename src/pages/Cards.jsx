@@ -316,7 +316,7 @@ export default function Cards() {
                     <button
                       onClick={goToNextCard}
                       disabled={animState !== 'idle'}
-                      className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-teal-500 hover:bg-teal-600 rounded-2xl text-white font-semibold text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-500/20"
+                      className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-teal-500 hover:bg-teal-600 rounded-2xl text-white font-semibold text-lg transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-500/20"
                     >
                       <RefreshCw size={22} className={animState !== 'idle' ? 'animate-spin' : ''} />
                       Đọc thẻ khác
