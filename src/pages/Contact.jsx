@@ -1,23 +1,26 @@
 /**
  * Contact Page Component
- * Contact information and form
+ * Contact information and map
  */
-import { useState } from 'react'
 import Navbar from '../components/Layout/Navbar'
 import Footer from '../components/Layout/Footer'
-import { Button, Alert } from '../components/UI'
-import { 
-  Phone, 
-  Mail, 
-  MapPin, 
+import {
+  Phone,
+  Mail,
+  MapPin,
   Clock,
-  Send,
   MessageCircle,
   Facebook,
-  ExternalLink,
-  CheckCircle2
+  ExternalLink
 } from 'lucide-react'
 import { EXTERNAL_LINKS } from '../constants'
+
+/**
+ * Google Maps Embed URL
+ * Change this URL to update the embedded map location.
+ * To get a new embed URL: Google Maps → Search location → Share → Embed a map → Copy the src URL
+ */
+const GOOGLE_MAP_EMBED_URL = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.7962019178694!2d105.5252787!3d21.0133937!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31345b465a4e65df%3A0xdb45a4b504e5532e!2zVHLGsOG7nW5nIFRIUFQgRlBUIEjDoCBO4buZaQ!5e0!3m2!1svi!2s!4v1700000000000!5m2!1svi!2s'
 
 const CONTACT_METHODS = [
   {
@@ -55,26 +58,6 @@ const CONTACT_METHODS = [
 ]
 
 export default function Contact() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-  })
-  const [loading, setLoading] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    setSubmitted(true)
-    setLoading(false)
-  }
-
   return (
     <div className="min-h-screen bg-animated-gradient relative overflow-hidden flex flex-col">
       {/* Floating Orbs */}
@@ -125,101 +108,37 @@ export default function Contact() {
             ))}
           </div>
 
-          {/* Contact Form & Map */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Form */}
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Gửi tin nhắn</h2>
-              
-              {submitted ? (
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle2 size={40} className="text-teal-500" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Đã gửi thành công!</h3>
-                  <p className="text-gray-600">Chúng tôi sẽ phản hồi trong thời gian sớm nhất.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tiêu đề</label>
-                    <input
-                      type="text"
-                      value={formData.subject}
-                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                      className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nội dung</label>
-                    <textarea
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      rows={4}
-                      className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none resize-none"
-                      required
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    loading={loading}
-                    disabled={loading}
-                    size="lg"
-                    className="w-full"
-                    icon={Send}
-                  >
-                    Gửi tin nhắn
-                  </Button>
-                </form>
-              )}
+          {/* Map & Address — Full Width */}
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+              <MapPin className="text-teal-500" size={24} />
+              Địa chỉ
+            </h2>
+
+            <div className="flex flex-wrap gap-x-8 gap-y-2 mb-6">
+              <div>
+                <h3 className="font-semibold text-gray-800">Phòng Tâm lý Học đường</h3>
+                <p className="text-gray-600">Trường THPT FPT Hà Nội</p>
+              </div>
+              <div className="text-gray-600">
+                <p>Khu Công nghệ cao Hòa Lạc</p>
+                <p>Thạch Thất, Hà Nội</p>
+              </div>
             </div>
 
-            {/* Map / Address */}
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                <MapPin className="text-teal-500" size={24} />
-                Địa chỉ
-              </h2>
-              
-              <div className="space-y-4 mb-6">
-                <div>
-                  <h3 className="font-semibold text-gray-800">Phòng Tâm lý Học đường</h3>
-                  <p className="text-gray-600">Trường THPT FPT Hà Nội</p>
-                </div>
-                <div className="text-gray-600">
-                  <p>Khu Công nghệ cao Hòa Lạc</p>
-                  <p>Thạch Thất, Hà Nội</p>
-                </div>
-              </div>
-
-              {/* Map Placeholder */}
-              <div className="bg-gray-100 rounded-xl h-64 flex items-center justify-center text-gray-400">
-                <div className="text-center">
-                  <MapPin size={40} className="mx-auto mb-2 text-gray-300" />
-                  <p>Bản đồ sẽ được thêm sau</p>
-                </div>
-              </div>
+            {/* Embedded Google Map */}
+            <div className="rounded-xl overflow-hidden">
+              <iframe
+                src={GOOGLE_MAP_EMBED_URL}
+                width="100%"
+                height="450"
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Bản đồ Trường THPT FPT Hà Nội"
+                className="w-full"
+              />
             </div>
           </div>
         </div>
