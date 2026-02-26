@@ -20,7 +20,7 @@ import { EXTERNAL_LINKS } from '../constants'
  * Change this URL to update the embedded map location.
  * To get a new embed URL: Google Maps → Search location → Share → Embed a map → Copy the src URL
  */
-const GOOGLE_MAP_EMBED_URL = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.7962019178694!2d105.5252787!3d21.0133937!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31345b465a4e65df%3A0xdb45a4b504e5532e!2zVHLGsOG7nW5nIFRIUFQgRlBUIEjDoCBO4buZaQ!5e0!3m2!1svi!2s!4v1700000000000!5m2!1svi!2s'
+const GOOGLE_MAP_EMBED_URL = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3860.148954386832!2d105.52532970953004!3d21.011379345390424!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31345bbfd675f23f%3A0x687158968ee822d6!2zVHLGsMahzIBuZyBUSFBUIEZQVCBIw6AgTuG7mWk!5e0!3m2!1svi!2s!4v1772094995690!5m2!1svi!2s'
 
 /**
  * Map address details
