@@ -2,14 +2,14 @@
  * Guide Page Component (HDSD - Hướng dẫn sử dụng)
  * Walkthrough scroll style user guide
  */
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { 
-  MessageCircle, 
-  Users, 
-  Shield, 
-  Bell, 
-  User, 
+import {
+  MessageCircle,
+  Users,
+  Shield,
+  Bell,
+  User,
   Heart,
   ChevronDown,
   CheckCircle2,
@@ -18,12 +18,33 @@ import {
   Lock,
   Send,
   ClipboardList,
-  MessageSquarePlus
+  MessageSquarePlus,
+  ImageIcon
 } from 'lucide-react'
 import Navbar from '../components/Layout/Navbar'
 import Footer from '../components/Layout/Footer'
 import { ROUTES } from '../constants'
 
+/**
+ * ============================================================
+ * Guide Media Configuration
+ * ============================================================
+ * All media files should be placed in this folder inside public/.
+ * Change the folder path or individual file names below as needed.
+ */
+const GUIDE_MEDIA_FOLDER = '/images/guide'
+
+/**
+ * Guide sections data.
+ *
+ * Each section can have a `media` object:
+ *   media: {
+ *     type: 'image' | 'video',
+ *     src: 'filename.png'          ← file inside GUIDE_MEDIA_FOLDER
+ *   }
+ *
+ * Set `media` to null (or omit it) to show a placeholder.
+ */
 const GUIDE_SECTIONS = [
   {
     id: 'welcome',
@@ -32,7 +53,7 @@ const GUIDE_SECTIONS = [
     description: 'S-Net là cầu nối giữa học sinh và các chuyên gia tâm lý tại trường. Hãy cùng khám phá các tính năng giúp bạn được lắng nghe và hỗ trợ.',
     icon: Heart,
     color: 'from-teal-400 to-cyan-500',
-    image: null // Will add later
+    media: null // Example: { type: 'image', src: 'welcome.png' }
   },
   {
     id: 'chat',
@@ -47,7 +68,7 @@ const GUIDE_SECTIONS = [
       'Lưu lịch sử tin nhắn an toàn',
       'Thông báo khi có phản hồi'
     ],
-    image: null
+    media: null // Example: { type: 'video', src: 'chat-demo.mp4' }
   },
   {
     id: 'community',
@@ -62,7 +83,7 @@ const GUIDE_SECTIONS = [
       'AI kiểm duyệt nội dung độc hại',
       'Tư vấn viên theo dõi và hỗ trợ'
     ],
-    image: null
+    media: null
   },
   {
     id: 'anonymous',
@@ -77,7 +98,7 @@ const GUIDE_SECTIONS = [
       'Chỉ tư vấn viên mới biết danh tính (bảo mật)',
       'Bạn có thể tắt/bật bất cứ lúc nào'
     ],
-    image: null
+    media: null
   },
   {
     id: 'survey',
@@ -92,7 +113,7 @@ const GUIDE_SECTIONS = [
       'Góp ý website',
       'Đề xuất tính năng mới'
     ],
-    image: null
+    media: null
   },
   {
     id: 'notifications',
@@ -107,7 +128,7 @@ const GUIDE_SECTIONS = [
       'Badge hiển thị số chưa đọc',
       'Có thể bật thông báo trình duyệt'
     ],
-    image: null
+    media: null
   },
   {
     id: 'start',
@@ -117,9 +138,95 @@ const GUIDE_SECTIONS = [
     icon: Sparkles,
     color: 'from-teal-400 to-cyan-500',
     cta: true,
-    image: null
+    media: null
   }
 ]
+
+/* ============================================================
+ * MediaDisplay — renders image, video, or placeholder
+ * ============================================================
+ * • Images render as a simple <img>.
+ * • Videos autoplay (muted for browser policy), loop, and
+ *   pause/resume on click. When the video scrolls out of view
+ *   it stops completely (currentTime reset to 0).
+ * ============================================================ */
+function MediaDisplay({ media }) {
+  const videoRef = useRef(null)
+
+  // IntersectionObserver: play when visible, stop when not
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          video.play().catch(() => { })
+        } else {
+          video.pause()
+          video.currentTime = 0 // stop completely
+        }
+      },
+      { threshold: 0.3 }
+    )
+
+    observer.observe(video)
+    return () => observer.disconnect()
+  }, [])
+
+  // Click to toggle pause / play
+  const handleVideoClick = useCallback(() => {
+    const video = videoRef.current
+    if (!video) return
+    if (video.paused) {
+      video.play().catch(() => { })
+    } else {
+      video.pause()
+    }
+  }, [])
+
+  // No media configured — show placeholder
+  if (!media || !media.src) {
+    return (
+      <div className="w-full lg:w-[65%] mx-auto aspect-video bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 mb-8">
+        <div className="text-center">
+          <ImageIcon size={40} className="mx-auto mb-2 text-gray-300" />
+          <span>Hình ảnh / Video minh họa sẽ được thêm sau</span>
+        </div>
+      </div>
+    )
+  }
+
+  const fullSrc = `${GUIDE_MEDIA_FOLDER}/${media.src}`
+
+  if (media.type === 'video') {
+    return (
+      <div className="w-full lg:w-[65%] mx-auto rounded-2xl overflow-hidden shadow-lg mb-8">
+        <video
+          ref={videoRef}
+          src={fullSrc}
+          className="w-full aspect-video object-cover cursor-pointer"
+          muted
+          loop
+          playsInline
+          onClick={handleVideoClick}
+        />
+      </div>
+    )
+  }
+
+  // Default: image
+  return (
+    <div className="w-full lg:w-[65%] mx-auto rounded-2xl overflow-hidden shadow-lg mb-8">
+      <img
+        src={fullSrc}
+        alt="Minh họa"
+        className="w-full aspect-video object-cover"
+        loading="lazy"
+      />
+    </div>
+  )
+}
 
 export default function Guide() {
   const [activeSection, setActiveSection] = useState(0)
@@ -164,18 +271,15 @@ export default function Guide() {
           <button
             key={section.id}
             onClick={() => scrollToSection(index)}
-            className={`group flex items-center gap-3 transition-all ${
-              activeSection === index ? 'scale-110' : 'opacity-50 hover:opacity-100'
-            }`}
+            className={`group flex items-center gap-3 transition-all ${activeSection === index ? 'scale-110' : 'opacity-50 hover:opacity-100'
+              }`}
           >
-            <div className={`w-3 h-3 rounded-full transition-all ${
-              activeSection === index 
-                ? `bg-gradient-to-r ${section.color} shadow-lg` 
+            <div className={`w-3 h-3 rounded-full transition-all ${activeSection === index
+                ? `bg-gradient-to-r ${section.color} shadow-lg`
                 : 'bg-gray-300'
-            }`} />
-            <span className={`text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ${
-              activeSection === index ? 'text-teal-600' : 'text-gray-500'
-            }`}>
+              }`} />
+            <span className={`text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ${activeSection === index ? 'text-teal-600' : 'text-gray-500'
+              }`}>
               {section.title}
             </span>
           </button>
@@ -190,7 +294,7 @@ export default function Guide() {
             ref={el => sectionRefs.current[index] = el}
             className="min-h-screen flex items-center justify-center px-4 py-20"
           >
-            <div className="max-w-4xl mx-auto text-center">
+            <div className="max-w-5xl mx-auto text-center">
               {/* Icon */}
               <div className={`inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-gradient-to-br ${section.color} shadow-2xl mb-8 animate-float`}>
                 <section.icon size={48} className="text-white" />
@@ -211,7 +315,7 @@ export default function Guide() {
               {section.features && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
                   {section.features.map((feature, i) => (
-                    <div 
+                    <div
                       key={i}
                       className="flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-xl px-4 py-3 shadow-sm"
                     >
@@ -222,11 +326,9 @@ export default function Guide() {
                 </div>
               )}
 
-              {/* Image Placeholder */}
-              {section.image === null && !section.cta && (
-                <div className="bg-gray-100 rounded-2xl h-64 max-w-lg mx-auto flex items-center justify-center text-gray-400 mb-8">
-                  <span>Hình ảnh minh họa sẽ được thêm sau</span>
-                </div>
+              {/* Media (image / video / placeholder) */}
+              {!section.cta && (
+                <MediaDisplay media={section.media} />
               )}
 
               {/* CTA Button */}
