@@ -22,6 +22,17 @@ import { EXTERNAL_LINKS } from '../constants'
  */
 const GOOGLE_MAP_EMBED_URL = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.7962019178694!2d105.5252787!3d21.0133937!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31345b465a4e65df%3A0xdb45a4b504e5532e!2zVHLGsOG7nW5nIFRIUFQgRlBUIEjDoCBO4buZaQ!5e0!3m2!1svi!2s!4v1700000000000!5m2!1svi!2s'
 
+/**
+ * Map address details
+ * Change these values to update the displayed address information.
+ */
+const MAP_ADDRESS = {
+  department: 'Phòng Tâm lý Học đường',
+  school: 'Trường THPT FPT Hà Nội',
+  street: 'Khu Công nghệ cao Hòa Lạc',
+  city: 'Thạch Thất, Hà Nội'
+}
+
 const CONTACT_METHODS = [
   {
     icon: Phone,
@@ -117,12 +128,12 @@ export default function Contact() {
 
             <div className="flex flex-wrap gap-x-8 gap-y-2 mb-6">
               <div>
-                <h3 className="font-semibold text-gray-800">Phòng Tâm lý Học đường</h3>
-                <p className="text-gray-600">Trường THPT FPT Hà Nội</p>
+                <h3 className="font-semibold text-gray-800">{MAP_ADDRESS.department}</h3>
+                <p className="text-gray-600">{MAP_ADDRESS.school}</p>
               </div>
               <div className="text-gray-600">
-                <p>Khu Công nghệ cao Hòa Lạc</p>
-                <p>Thạch Thất, Hà Nội</p>
+                <p>{MAP_ADDRESS.street}</p>
+                <p>{MAP_ADDRESS.city}</p>
               </div>
             </div>
 
@@ -136,7 +147,7 @@ export default function Contact() {
                 allowFullScreen=""
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="Bản đồ Trường THPT FPT Hà Nội"
+                title="Bản đồ địa chỉ"
                 className="w-full"
               />
             </div>
