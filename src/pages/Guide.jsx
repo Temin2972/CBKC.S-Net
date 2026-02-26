@@ -83,7 +83,10 @@ const GUIDE_SECTIONS = [
       'AI kiểm duyệt nội dung độc hại',
       'Tư vấn viên theo dõi và hỗ trợ'
     ],
-    media: null
+    media: {
+      type: 'image',
+      src: 'library.jpg'
+    }
   },
   {
     id: 'anonymous',
@@ -98,7 +101,10 @@ const GUIDE_SECTIONS = [
       'Chỉ tư vấn viên mới biết danh tính (bảo mật)',
       'Bạn có thể tắt/bật bất cứ lúc nào'
     ],
-    media: null
+    media: {
+      type: 'video',
+      src: 'test.mp4'
+    }
   },
   {
     id: 'survey',
@@ -275,8 +281,8 @@ export default function Guide() {
               }`}
           >
             <div className={`w-3 h-3 rounded-full transition-all ${activeSection === index
-                ? `bg-gradient-to-r ${section.color} shadow-lg`
-                : 'bg-gray-300'
+              ? `bg-gradient-to-r ${section.color} shadow-lg`
+              : 'bg-gray-300'
               }`} />
             <span className={`text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ${activeSection === index ? 'text-teal-600' : 'text-gray-500'
               }`}>
