@@ -74,7 +74,7 @@ export default function ChatInterface({ chatRoom, currentUser }) {
       const timestamp = new Date().toLocaleString('vi-VN')
       const urgencyLabels = {
         0: '🟢 Bình thường',
-        1: '🟡 Cần chú ý', 
+        1: '🟡 Cần chú ý',
         2: '🟠 Khẩn cấp',
         3: '🔴 Rất khẩn cấp'
       }
@@ -116,7 +116,7 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
           console.log('ℹ️ Counselor has already written notes, skipping AI assessment')
           return
         }
-        
+
         // Prepend new AI note to existing content (if no counselor has updated)
         const { error: updateError } = await supabase
           .from('student_notes')
@@ -152,7 +152,7 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
               .update({ content: newAINote })
               .eq('student_id', studentId)
               .is('updated_by', null)
-            
+
             if (retryError) {
               console.error('❌ Error on retry update:', retryError)
             } else {
@@ -179,7 +179,7 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
 
     try {
       console.log('🤖 Sending AI message to room:', chatRoom.id)
-      
+
       const { data, error } = await supabase.from('chat_messages').insert({
         chat_room_id: chatRoom.id,
         sender_id: null, // NULL indicates system/AI message
@@ -191,7 +191,7 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
         console.error('❌ Error inserting AI message:', error)
         return false
       }
-      
+
       console.log('✅ AI message sent successfully:', data)
       return true
     } catch (error) {
@@ -227,7 +227,7 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
 
       if (response && !counselorHasReplied()) {
         const sent = await sendAIMessage(response)
-        
+
         if (sent) {
           // Add AI response to history
           conversationHistoryRef.current.push({
@@ -249,7 +249,7 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
                 ai_triage_complete: true
               })
               .eq('id', chatRoom.id)
-            
+
             if (updateError) {
               console.error('❌ Error updating chat room assessment:', updateError)
             } else {
@@ -306,7 +306,7 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
     const lastMessage = messages[messages.length - 1]
     // Check if it's a student message (not system, has sender_id that matches current user)
     const isStudentMessage = !lastMessage.is_system && lastMessage.sender_id === currentUser?.id
-    
+
     console.log('📩 Last message check:', {
       id: lastMessage.id,
       isStudentMessage,
@@ -348,9 +348,21 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
     }
   }, [])
 
+  const messagesContainerRef = useRef(null)
+
+  // Only auto-scroll if user is already near the bottom
+  const isNearBottom = useCallback(() => {
+    const container = messagesContainerRef.current
+    if (!container) return true
+    const threshold = 150
+    return container.scrollHeight - container.scrollTop - container.clientHeight < threshold
+  }, [])
+
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    if (isNearBottom()) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages, isNearBottom])
 
   // Tự động đánh dấu tin nhắn là đã đọc khi vào chat
   useEffect(() => {
@@ -493,7 +505,7 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
   return (
     <div className="flex flex-col h-[calc(100vh-250px)]">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-gray-400">
@@ -507,27 +519,27 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
               <div
                 key={message.id}
                 className={`flex message-enter ${isAIMessage(message)
-                    ? 'justify-start'
-                    : message.is_mine
-                      ? 'justify-end'
-                      : 'justify-start'
+                  ? 'justify-start'
+                  : message.is_mine
+                    ? 'justify-end'
+                    : 'justify-start'
                   }`}
                 style={{ animationDelay: `${Math.min(index * 0.05, 0.5)}s` }}
               >
                 <div
                   className={`max-w-[70%] rounded-2xl px-4 py-2 transition-all duration-200 hover:shadow-md ${isAIMessage(message)
-                      ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white'
-                      : message.is_mine
-                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                        : 'bg-white text-gray-800 border border-gray-200'
+                    ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white'
+                    : message.is_mine
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                      : 'bg-white text-gray-800 border border-gray-200'
                     }`}
                 >
                   {/* Sender name */}
                   <div className={`text-xs font-semibold mb-1 flex items-center gap-1 ${isAIMessage(message)
-                      ? 'text-teal-100'
-                      : message.is_mine
-                        ? 'text-purple-200'
-                        : 'text-purple-600'
+                    ? 'text-teal-100'
+                    : message.is_mine
+                      ? 'text-purple-200'
+                      : 'text-purple-600'
                     }`}>
                     {isAIMessage(message) && <Sparkles size={12} />}
                     {getSenderDisplayName(message)}
@@ -535,16 +547,15 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
 
                   {/* Message Content - with link parsing for system messages */}
                   <div className="whitespace-pre-wrap break-words">
-                    {parseMessageContent(message.content).map((part, idx) => 
+                    {parseMessageContent(message.content).map((part, idx) =>
                       part.type === 'link' ? (
-                        <Link 
+                        <Link
                           key={idx}
                           to={part.url}
-                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium transition-all hover:scale-105 ${
-                            isAIMessage(message) || message.is_mine
-                              ? 'bg-white/20 hover:bg-white/30 text-white underline'
-                              : 'bg-purple-100 hover:bg-purple-200 text-purple-700'
-                          }`}
+                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium transition-all hover:scale-105 ${isAIMessage(message) || message.is_mine
+                            ? 'bg-white/20 hover:bg-white/30 text-white underline'
+                            : 'bg-purple-100 hover:bg-purple-200 text-purple-700'
+                            }`}
                         >
                           {part.text}
                         </Link>
@@ -559,8 +570,8 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
                     <div className="flex items-center gap-2">
                       <span
                         className={`text-xs ${isAIMessage(message) || message.is_mine
-                            ? 'text-white/80'
-                            : 'text-gray-500'
+                          ? 'text-white/80'
+                          : 'text-gray-500'
                           }`}
                       >
                         {formatTime(message.created_at)}
@@ -568,8 +579,8 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
 
                       {message.is_mine && !isAIMessage(message) && (
                         <span className={`text-xs ${(message.read_by || []).length > 1
-                            ? 'text-green-200'
-                            : 'text-white/60'
+                          ? 'text-green-200'
+                          : 'text-white/60'
                           }`}>
                           {(message.read_by || []).length > 1 ? '✓✓ Đã xem' : '✓ Đã gửi'}
                         </span>

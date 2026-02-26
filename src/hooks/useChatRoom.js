@@ -90,7 +90,7 @@ export function useChatRoom(userId, userRole) {
           // Filter client-side to avoid binding mismatch
           const record = payload.new || payload.old
           if (record?.student_id !== userId) return
-          
+
           console.log('Chat room updated:', payload.eventType)
           if (payload.eventType === 'DELETE') {
             setChatRoom(null)
