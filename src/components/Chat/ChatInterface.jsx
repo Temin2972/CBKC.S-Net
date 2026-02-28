@@ -344,6 +344,22 @@ ${assessment.summary ? `📝 Tóm tắt:
     }, AI_RESPONSE_DELAY)
   }, [counselorHasReplied, sendAIMessage])
 
+  // Send welcome message immediately when a new chat room is created (no messages yet)
+  useEffect(() => {
+    if (loading || !chatRoom?.id || !messages) return
+    // Only send if there are no messages at all and AI hasn't responded yet
+    if (messages.length > 0 || aiHasRespondedRef.current || counselorHasReplied()) return
+
+    aiHasRespondedRef.current = true
+    const welcomeMsg = getWelcomeMessage()
+    sendAIMessage(welcomeMsg).then(() => {
+      conversationHistoryRef.current.push({
+        content: welcomeMsg,
+        isAI: true
+      })
+    })
+  }, [loading, chatRoom?.id, messages, counselorHasReplied, sendAIMessage])
+
   // Watch for new student messages to trigger AI
   useEffect(() => {
     if (!messages || messages.length === 0) return
