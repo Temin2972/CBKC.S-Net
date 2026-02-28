@@ -55,7 +55,47 @@ export default function ChatInterface({ chatRoom, currentUser }) {
   const aiTimerRef = useRef(null)
   const aiHasRespondedRef = useRef(false)
   const conversationHistoryRef = useRef([])
+  const processedMessagesRef = useRef(new Set())
   const [aiProcessing, setAiProcessing] = useState(false)
+  const hasRestoredContextRef = useRef(false)
+
+  // Restore AI context from database messages after page refresh
+  useEffect(() => {
+    if (hasRestoredContextRef.current || loading || !messages || messages.length === 0) return
+    hasRestoredContextRef.current = true
+
+    // Check if AI has already responded in this chat
+    const hasAIMessages = messages.some(msg => msg.is_system && msg.sender_id === null)
+    if (hasAIMessages) {
+      aiHasRespondedRef.current = true
+    }
+
+    // Mark all existing message IDs as processed so the watcher doesn't re-trigger
+    messages.forEach(msg => processedMessagesRef.current.add(msg.id))
+
+    // Rebuild conversation history from recent messages (last 20 student + AI messages)
+    const relevantMessages = messages
+      .filter(msg => {
+        // Include student messages (not system, has sender_id)
+        if (!msg.is_system && msg.sender_id) return true
+        // Include AI messages (system, null sender_id)
+        if (msg.is_system && msg.sender_id === null) return true
+        return false
+      })
+      .slice(-20) // Cap at last 20 to avoid bloating the prompt
+
+    conversationHistoryRef.current = relevantMessages.map(msg => ({
+      content: msg.content,
+      isAI: msg.is_system && msg.sender_id === null
+    }))
+
+    console.log('🔄 Restored AI context:', {
+      aiHasResponded: aiHasRespondedRef.current,
+      historyLength: conversationHistoryRef.current.length,
+      processedIds: processedMessagesRef.current.size,
+      hasAssessment: !!chatRoom?.ai_assessment
+    })
+  }, [loading, messages, chatRoom?.ai_assessment])
 
   // Check if counselor has replied
   const counselorHasReplied = useCallback(() => {
@@ -86,13 +126,13 @@ export default function ChatInterface({ chatRoom, currentUser }) {
       }
 
       const newAINote = `🤖 Đánh giá AI - ${timestamp}
-═══════════════════════════════════════
+════════════════════════════════
 📊 Mức độ khẩn cấp: ${urgencyLabels[assessment.urgencyLevel] || 'Chưa xác định'}
 ⚠️ Nguy cơ tự hại: ${suicideRiskLabels[assessment.suicideRisk] || 'Không có'}
 ${assessment.mainIssues?.length > 0 ? `📋 Vấn đề chính: ${assessment.mainIssues.join(', ')}` : ''}
 ${assessment.emotionalState ? `💭 Trạng thái cảm xúc: ${assessment.emotionalState}` : ''}
 ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
-═══════════════════════════════════════
+════════════════════════════════
 ⚡ Đây là đánh giá tự động, cần xác nhận bởi tư vấn viên
 
 `
@@ -217,11 +257,12 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
         isAI: false
       })
 
-      // Generate AI response
+      // Generate AI response (pass prior assessment for context if available)
       console.log('🔄 Calling generateAIResponse...')
       const { response, assessment } = await generateAIResponse(
         conversationHistoryRef.current,
-        studentMessage
+        studentMessage,
+        chatRoom?.ai_assessment || null
       )
       console.log('📝 AI response received:', response ? response.substring(0, 50) + '...' : 'null')
 
@@ -295,9 +336,6 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
       }
     }, AI_RESPONSE_DELAY)
   }, [counselorHasReplied, sendAIMessage])
-
-  // Track processed message IDs to avoid duplicate AI responses
-  const processedMessagesRef = useRef(new Set())
 
   // Watch for new student messages to trigger AI
   useEffect(() => {
