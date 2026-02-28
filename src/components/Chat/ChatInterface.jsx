@@ -4,15 +4,12 @@ import { useChatMessages } from '../../hooks/useChatMessages'
 import { useUnreadMessages } from '../../hooks/useUnreadMessages'
 import { Send, Trash2, Bot, Sparkles } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
-import { generateAIResponse, shouldAIRespond } from '../../lib/aiTriage'
+import { generateAIResponse, shouldAIRespond, getWelcomeMessage } from '../../lib/aiTriage'
 
 // AI Response delay in milliseconds (0 = immediate greeting)
 const AI_RESPONSE_DELAY = 0
 
-// AI Introduction message
-const AI_INTRO_MESSAGE = `Chào em! 👋 Hiện tại các thầy cô đang bận, nhưng mình là Tâm An - trợ lý tâm lý của S-Net để giúp em trong quá trình chờ thầy cô nha! 
-
-Mình sẵn sàng lắng nghe em chia sẻ. Em có thể kể cho mình nghe em đang cảm thấy như thế nào không? 💭`
+// AI Introduction message - uses centralized getWelcomeMessage() from aiTriage.js
 
 // Parse message content to render markdown-style links as clickable
 const parseMessageContent = (content) => {
@@ -127,13 +124,20 @@ export default function ChatInterface({ chatRoom, currentUser }) {
 
       const newAINote = `🤖 Đánh giá AI - ${timestamp}
 ════════════════════════════════
-📊 Mức độ khẩn cấp: ${urgencyLabels[assessment.urgencyLevel] || 'Chưa xác định'}
-⚠️ Nguy cơ tự hại: ${suicideRiskLabels[assessment.suicideRisk] || 'Không có'}
-${assessment.mainIssues?.length > 0 ? `📋 Vấn đề chính: ${assessment.mainIssues.join(', ')}` : ''}
-${assessment.emotionalState ? `💭 Trạng thái cảm xúc: ${assessment.emotionalState}` : ''}
-${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
+📊 Mức độ khẩn cấp:
+${urgencyLabels[assessment.urgencyLevel] || 'Chưa xác định'}
+
+⚠️ Nguy cơ tự hại:
+${suicideRiskLabels[assessment.suicideRisk] || 'Không có'}
+
+${assessment.mainIssues?.length > 0 ? `📋 Vấn đề chính:
+  ${assessment.mainIssues.join(', ')}` : ''}
+${assessment.emotionalState ? `💭 Trạng thái cảm xúc:
+  ${assessment.emotionalState}` : ''}
+${assessment.summary ? `📝 Tóm tắt:
+  ${assessment.summary}` : ''}
 ════════════════════════════════
-⚡ Đây là đánh giá tự động, cần xác nhận bởi tư vấn viên
+⚡ Đây chỉ là đánh giá tự động, cần được xác nhận lại
 
 `
 
@@ -326,11 +330,12 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
         aiHasRespondedRef.current = true
 
         // Send introduction message
-        await sendAIMessage(AI_INTRO_MESSAGE, true)
+        const welcomeMsg = getWelcomeMessage()
+        await sendAIMessage(welcomeMsg, true)
 
         // Add to conversation history
         conversationHistoryRef.current.push({
-          content: AI_INTRO_MESSAGE,
+          content: welcomeMsg,
           isAI: true
         })
       }
