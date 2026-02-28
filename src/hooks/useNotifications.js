@@ -237,14 +237,10 @@ export function useNotifications(userId) {
 // Helper function to create notification
 export async function createNotification(userId, type, title, message, link = null, data = null) {
   try {
-    // Verify we have an active session before inserting
-    const { data: sessionData } = await supabase.auth.getSession()
-    if (!sessionData?.session) {
-      console.error('❌ No active session when creating notification — user is not authenticated')
-      return { data: null, error: new Error('Not authenticated') }
-    }
-
-    const { data: notification, error } = await supabase
+    // Don't use .select().single() after insert — the SELECT policy restricts
+    // to user_id = auth.uid(), but we're creating notifications for OTHER users,
+    // so the select would fail with an RLS violation.
+    const { error } = await supabase
       .from('notifications')
       .insert({
         user_id: userId,
@@ -254,11 +250,9 @@ export async function createNotification(userId, type, title, message, link = nu
         link,
         data
       })
-      .select()
-      .single()
 
     if (error) throw error
-    return { data: notification, error: null }
+    return { data: { user_id: userId, type, title, message }, error: null }
   } catch (error) {
     console.error('Error creating notification:', error)
     return { data: null, error }
