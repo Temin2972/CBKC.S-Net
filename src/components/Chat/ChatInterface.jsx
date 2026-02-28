@@ -359,13 +359,11 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
   }, [])
 
   useEffect(() => {
-    if (isNearBottom()) {
-      const container = messagesContainerRef.current
-      if (container) {
-        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
-      }
+    const container = messagesContainerRef.current
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
     }
-  }, [messages, isNearBottom])
+  }, [messages])
 
   // Tự động đánh dấu tin nhắn là đã đọc khi vào chat
   useEffect(() => {
