@@ -117,11 +117,11 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
           return
         }
 
-        // Prepend new AI note to existing content (if no counselor has updated)
+        // Replace old AI notes with new assessment (if no counselor has updated)
         const { error: updateError } = await supabase
           .from('student_notes')
           .update({
-            content: newAINote + (existingNote.content || '')
+            content: newAINote
             // Don't set updated_by - keep it null so AI can continue updating
           })
           .eq('student_id', studentId)
@@ -360,7 +360,10 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
 
   useEffect(() => {
     if (isNearBottom()) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      const container = messagesContainerRef.current
+      if (container) {
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
+      }
     }
   }, [messages, isNearBottom])
 
@@ -385,7 +388,10 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
   }, [chatRoom?.id])
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const container = messagesContainerRef.current
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
+    }
   }
 
   const handleSendMessage = async (e) => {
