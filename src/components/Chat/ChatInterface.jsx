@@ -122,7 +122,7 @@ export default function ChatInterface({ chatRoom, currentUser }) {
         'high': 'Cao'
       }
 
-      const newAINote = `🤖 Đánh giá AI - ${timestamp}
+      const newAINote = `Đánh giá AI - ${timestamp}
 ════════════════════════════════
 📊 Mức độ khẩn cấp:
 ${urgencyLabels[assessment.urgencyLevel] || 'Chưa xác định'}
@@ -132,12 +132,14 @@ ${suicideRiskLabels[assessment.suicideRisk] || 'Không có'}
 
 ${assessment.mainIssues?.length > 0 ? `📋 Vấn đề chính:
   ${assessment.mainIssues.join(', ')}` : ''}
-${assessment.emotionalState ? `💭 Trạng thái cảm xúc:
+
+${assessment.emotionalState ? ` Trạng thái cảm xúc:
   ${assessment.emotionalState}` : ''}
+
 ${assessment.summary ? `📝 Tóm tắt:
   ${assessment.summary}` : ''}
 ════════════════════════════════
-⚡ Đây chỉ là đánh giá tự động, cần được xác nhận lại
+Đây chỉ là đánh giá tự động, cần được xác nhận lại
 
 `
 
