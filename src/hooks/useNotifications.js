@@ -237,6 +237,13 @@ export function useNotifications(userId) {
 // Helper function to create notification
 export async function createNotification(userId, type, title, message, link = null, data = null) {
   try {
+    // Verify we have an active session before inserting
+    const { data: sessionData } = await supabase.auth.getSession()
+    if (!sessionData?.session) {
+      console.error('❌ No active session when creating notification — user is not authenticated')
+      return { data: null, error: new Error('Not authenticated') }
+    }
+
     const { data: notification, error } = await supabase
       .from('notifications')
       .insert({
