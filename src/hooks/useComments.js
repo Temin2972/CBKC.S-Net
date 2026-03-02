@@ -171,7 +171,7 @@ export function useComments(postId, currentUserId) {
     }
 
     // Analyze content with AI
-    const analysis = await analyzeContent(content)
+    const analysis = await analyzeContent(content, 'comment')
     console.log('Comment analysis:', analysis)
 
     // Handle based on moderation action

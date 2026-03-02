@@ -182,7 +182,7 @@ export default function Community() {
     setAnalyzing(true)
 
     // Analyze content with AI (only for text-only posts)
-    const analysis = await analyzeContent(newPost)
+    const analysis = await analyzeContent(newPost, 'post')
     console.log('Content analysis:', analysis)
 
     setAnalyzing(false)

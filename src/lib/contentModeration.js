@@ -65,7 +65,9 @@ Categories:
 6. "suicide" - Suicidal ideation, thoughts of ending life, wanting to die
 7. "aggressive" - Violent intentions, threats, bullying, hate speech, harmful to others
 8. "profanity" - Contains Vietnamese slang/profanity (dm, dcm, vl, etc.) or offensive language
-9. "spam" - Spam, nonsense, advertising, repetitive content, gibberish
+9. "spam" - Spam, advertising, repetitive content
+{MEANINGLESS_CATEGORY}
+
 
 Response format:
 {
@@ -80,6 +82,7 @@ IMPORTANT NOTES:
 - If you're not confident (< 70%), still provide your best guess but with low confidence
 - Spam and profanity should be blocked
 - Creative spellings of profanity (d.m, d m, đ-m) should still be detected
+{MEANINGLESS_NOTE}
 
 Content to analyze:
 """
@@ -91,9 +94,10 @@ Remember: Only output the JSON object, nothing else.`
 /**
  * Analyze content using Ollama API
  * @param {string} content - The text content to analyze
+ * @param {'post'|'comment'} [contentType='post'] - Type of content being analyzed
  * @returns {Promise<{action: string, flagLevel: number, category: string, reasoning: string, keywords: string[]}>}
  */
-export async function analyzeContent(content) {
+export async function analyzeContent(content, contentType = 'post') {
   // Result when API fails - content goes to pending review
   const pendingResult = {
     action: MODERATION_ACTIONS.PENDING,
@@ -145,7 +149,19 @@ export async function analyzeContent(content) {
 
   try {
     console.log('🔍 Analyzing content with Ollama API...')
-    const prompt = MODERATION_PROMPT.replace('{CONTENT}', content)
+    
+    // Build prompt - include meaningless detection only for posts
+    const meaninglessCategory = contentType === 'post'
+      ? '10. "meaningless" - The words are real/proper words but together they form no coherent meaning, story, message, or intent. Random words thrown together, disconnected phrases that make no sense as a post, or content that a reader cannot understand or derive any meaning from.'
+      : ''
+    const meaninglessNote = contentType === 'post'
+      ? '- For posts: if the content uses real words but they do NOT form any coherent message, story, or meaning together, categorize as "meaningless". A post should communicate something understandable to readers.'
+      : ''
+    
+    const prompt = MODERATION_PROMPT
+      .replace('{MEANINGLESS_CATEGORY}', meaninglessCategory)
+      .replace('{MEANINGLESS_NOTE}', meaninglessNote)
+      .replace('{CONTENT}', content)
 
     const textResponse = await ollamaChat({
       messages: [
@@ -393,7 +409,8 @@ function mapCategoryToAction(analysis) {
     case 'aggressive':
     case 'profanity':
     case 'spam':
-      // Block aggressive, profane, or spam content
+    case 'meaningless':
+      // Block aggressive, profane, spam, or meaningless content
       return {
         ...result,
         action: MODERATION_ACTIONS.BLOCK,
@@ -464,6 +481,13 @@ export function getModerationMessage(action, category) {
           showChatSuggestion: false
         }
       }
+      if (category === 'meaningless') {
+        return {
+          title: 'Nội dung không rõ ràng',
+          message: 'Bài viết của bạn không có nội dung rõ ràng. Vui lòng viết chi tiết hơn để mọi người có thể hiểu và hỗ trợ bạn.',
+          showChatSuggestion: false
+        }
+      }
       return {
         title: 'Nội dung không được phép',
         message: 'Bài viết của bạn chứa nội dung không phù hợp và không thể được đăng.',
@@ -531,7 +555,8 @@ export function getCategoryLabel(category) {
     'suicide': 'Ý định tự tử',
     'aggressive': 'Hung hăng/Bạo lực',
     'profanity': 'Ngôn ngữ tục tĩu',
-    'spam': 'Spam'
+    'spam': 'Spam',
+    'meaningless': 'Nội dung vô nghĩa'
   }
   return labels[category] || category
 }
