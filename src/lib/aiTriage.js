@@ -4,8 +4,7 @@
  * suicide risk evaluation, and condition summaries
  */
 
-const OLLAMA_API_KEY = () => import.meta.env.VITE_OLLAMA_API_KEY
-const OLLAMA_MODEL = () => import.meta.env.VITE_OLLAMA_MODEL || 'gemini-3-flash-preview:cloud'
+import { ollamaChat } from './ollamaClient'
 
 // Urgency level configuration
 export const URGENCY_LEVELS = {
@@ -87,15 +86,6 @@ Bạn KHÔNG phải AI thông thường - bạn là "Tâm An", trợ lý tâm l�
  * Also provides real-time assessment
  */
 export async function generateAIResponse(conversationHistory, studentMessage, priorAssessment = null) {
-    const apiKey = OLLAMA_API_KEY()
-    const model = OLLAMA_MODEL()
-
-    if (apiKey) {
-        console.log('🔑 Ollama API Key found (length:', apiKey.length, ') - using client-side auth')
-    } else {
-        console.log('🔑 No client-side API key - relying on server proxy auth')
-    }
-    console.log('🤖 Using model:', model)
     console.log('💬 Conversation history length:', conversationHistory.length)
 
     const conversationText = conversationHistory
@@ -146,35 +136,16 @@ Mức độ khẩn cấp:
 Chỉ trả về JSON, không thêm text khác.`
 
     try {
-        const headers = { 'Content-Type': 'application/json' }
-        if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
-
-        const response = await fetch('/ollama/api/chat', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                model,
-                messages: [
-                    { role: 'system', content: AI_SYSTEM_CONTEXT },
-                    { role: 'user', content: prompt }
-                ],
-                stream: false,
-                options: {
-                    temperature: 0.7,
-                    num_predict: 500
-                }
-            })
+        const text = await ollamaChat({
+            messages: [
+                { role: 'system', content: AI_SYSTEM_CONTEXT },
+                { role: 'user', content: prompt }
+            ],
+            temperature: 0.7,
+            maxTokens: 500
         })
 
-        if (!response.ok) {
-            const errorText = await response.text()
-            console.error('❌ Ollama API error:', response.status, errorText)
-            throw new Error(`API error: ${response.status} - ${errorText}`)
-        }
-
-        const data = await response.json()
         console.log('✅ Ollama API response received')
-        const text = data.message?.content || ''
 
         if (!text) {
             console.warn('⚠️ Empty response from Ollama API')
@@ -212,9 +183,6 @@ Chỉ trả về JSON, không thêm text khác.`
  * Generate comprehensive student assessment for counselors
  */
 export async function generateStudentAssessment(allMessages) {
-    const apiKey = OLLAMA_API_KEY()
-    const model = OLLAMA_MODEL()
-
     if (allMessages.length === 0) {
         return null
     }
@@ -258,32 +226,14 @@ Mức độ khẩn cấp:
 Chỉ trả về JSON.`
 
     try {
-        const headers = { 'Content-Type': 'application/json' }
-        if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
-
-        const response = await fetch('/ollama/api/chat', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                model,
-                messages: [
-                    { role: 'system', content: 'Bạn là chuyên gia tâm lý học đường. Phân tích cuộc hội thoại và đưa ra đánh giá chi tiết cho tư vấn viên.' },
-                    { role: 'user', content: prompt }
-                ],
-                stream: false,
-                options: {
-                    temperature: 0.3,
-                    num_predict: 800
-                }
-            })
+        const text = await ollamaChat({
+            messages: [
+                { role: 'system', content: 'Bạn là chuyên gia tâm lý học đường. Phân tích cuộc hội thoại và đưa ra đánh giá chi tiết cho tư vấn viên.' },
+                { role: 'user', content: prompt }
+            ],
+            temperature: 0.3,
+            maxTokens: 800
         })
-
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status}`)
-        }
-
-        const data = await response.json()
-        const text = data.message?.content || ''
 
         const jsonMatch = text.match(/\{[\s\S]*\}/)
         if (jsonMatch) {

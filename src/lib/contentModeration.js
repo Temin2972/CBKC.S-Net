@@ -1,15 +1,9 @@
-// Content Moderation using Ollama API
+// Content Moderation using Ollama Cloud API
 
-const OLLAMA_API_KEY = import.meta.env.VITE_OLLAMA_API_KEY
-const OLLAMA_MODEL = import.meta.env.VITE_OLLAMA_MODEL || 'gemini-3-flash-preview:cloud'
-const OLLAMA_API_URL = '/ollama/api/chat'
+import { ollamaChat } from './ollamaClient'
 
 // Confidence threshold - below this, content goes to pending review
 const CONFIDENCE_THRESHOLD = 0.7
-
-// Debug: Log API key status (remove in production)
-console.log('Ollama API Key configured:', OLLAMA_API_KEY ? 'Yes (length: ' + OLLAMA_API_KEY.length + ')' : 'No')
-console.log('Ollama Model:', OLLAMA_MODEL)
 
 // Flag levels
 export const FLAG_LEVELS = {
@@ -110,10 +104,6 @@ export async function analyzeContent(content) {
     confidence: 0
   }
 
-  if (!OLLAMA_API_KEY) {
-    console.log('🔑 No client-side API key - relying on server proxy auth')
-  }
-
   if (!content || content.trim().length === 0) {
     return {
       action: MODERATION_ACTIONS.ALLOW,
@@ -157,39 +147,16 @@ export async function analyzeContent(content) {
     console.log('🔍 Analyzing content with Ollama API...')
     const prompt = MODERATION_PROMPT.replace('{CONTENT}', content)
 
-    const headers = { 'Content-Type': 'application/json' }
-    if (OLLAMA_API_KEY) headers['Authorization'] = `Bearer ${OLLAMA_API_KEY}`
-
-    const response = await fetch(OLLAMA_API_URL, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: OLLAMA_MODEL,
-        messages: [
-          { role: 'system', content: 'You are a content moderation AI. Respond only with valid JSON.' },
-          { role: 'user', content: prompt }
-        ],
-        stream: false,
-        options: {
-          temperature: 0.1,
-          num_predict: 500
-        }
-      })
+    const textResponse = await ollamaChat({
+      messages: [
+        { role: 'system', content: 'You are a content moderation AI. Respond only with valid JSON.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.1,
+      maxTokens: 500
     })
 
-    console.log('📡 API Response status:', response.status)
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('❌ Ollama API error:', response.status, errorText)
-      return pendingResult
-    }
-
-    const data = await response.json()
-    console.log('✅ API Response received:', data)
-    
-    // Extract the text response
-    const textResponse = data.message?.content
+    console.log('✅ API Response received')
     
     if (!textResponse) {
       console.error('❌ No text in API response')
