@@ -440,6 +440,40 @@ function mapCategoryToAction(analysis) {
 }
 
 /**
+ * Moderate a display name - simple accept/reject without counselor review.
+ * Uses the same profanity and spam detection as community content moderation.
+ * @param {string} displayName - The display name to check
+ * @returns {{ allowed: boolean, reason: string }}
+ */
+export function moderateDisplayName(displayName) {
+  if (!displayName || displayName.trim().length === 0) {
+    return { allowed: false, reason: 'Tên hiển thị không được để trống' }
+  }
+
+  const name = displayName.trim()
+
+  // Check for Vietnamese slang/profanity
+  const slangCheck = detectVietnameseSlang(name)
+  if (slangCheck.detected) {
+    return {
+      allowed: false,
+      reason: 'Tên hiển thị chứa ngôn ngữ không phù hợp. Vui lòng chọn tên khác.'
+    }
+  }
+
+  // Check for spam patterns (gibberish, excessive chars, etc.)
+  const spamCheck = detectSpamPatterns(name)
+  if (spamCheck.detected) {
+    return {
+      allowed: false,
+      reason: 'Tên hiển thị không hợp lệ. Vui lòng chọn tên có ý nghĩa.'
+    }
+  }
+
+  return { allowed: true, reason: '' }
+}
+
+/**
  * Get Vietnamese message for moderation result
  */
 export function getModerationMessage(action, category) {

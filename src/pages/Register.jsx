@@ -12,6 +12,7 @@ import { Input, PasswordInput, Button, Alert } from '../components/UI'
 import { ROUTES, PASSWORD_RULES } from '../constants'
 import { AUTH_MESSAGES, BUTTON_LABELS, FORM_LABELS } from '../constants/messages'
 import { isEmail } from '../utils/validation'
+import { moderateDisplayName } from '../lib/contentModeration'
 
 // Feature messages based on redirect origin
 const FEATURE_MESSAGES = {
@@ -148,6 +149,13 @@ export default function Register() {
       setError('')
 
       if (!validate(validationSchema)) return
+
+      // Check display name for inappropriate content
+      const nameCheck = moderateDisplayName(values.fullName)
+      if (!nameCheck.allowed) {
+        setError(nameCheck.reason)
+        return
+      }
 
       setLoading(true)
 

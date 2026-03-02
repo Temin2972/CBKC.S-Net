@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase, isDemoMode, getDemoState } from '../lib/supabaseClient'
 import { AVATAR_PRESETS, DEMO_USERS } from '../lib/demoData'
+import { moderateDisplayName } from '../lib/contentModeration'
 import Navbar from '../components/Layout/Navbar'
 import { Button, Alert } from '../components/UI'
 import { 
@@ -131,9 +132,17 @@ export default function Profile() {
   }
 
   const handleSave = async () => {
-    setLoading(true)
     setError('')
     setSaved(false)
+
+    // Check display name for inappropriate content
+    const nameCheck = moderateDisplayName(displayName)
+    if (!nameCheck.allowed) {
+      setError(nameCheck.reason)
+      return
+    }
+
+    setLoading(true)
 
     try {
       const profileData = {

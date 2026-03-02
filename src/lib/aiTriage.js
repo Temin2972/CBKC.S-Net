@@ -317,9 +317,8 @@ export function shouldAIRespond(chatRoom) {
  * Get welcome message for new chat
  */
 export function getWelcomeMessage() {
-    return `Xin chào! 👋 Mình là Tâm An, trợ lý tâm lý của S-Net. 
-
-Trong khi chờ tư vấn viên, mình sẵn sàng lắng nghe và hỗ trợ bạn. Bạn có chuyện gì muốn chia sẻ không? 💭`
+    return `Chào bạn! 👋 Mình là Tâm An, trợ lý tâm lý của S-Net.
+Trong khi chờ thầy cô tư vấn, mình sẵn sàng lắng nghe và hỗ trợ bạn. Bạn có chuyện gì muốn chia sẻ không? ❤️`
 }
 
 /**
