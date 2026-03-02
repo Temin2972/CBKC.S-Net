@@ -4,7 +4,8 @@
  * suicide risk evaluation, and condition summaries
  */
 
-const GEMINI_API_KEY = () => import.meta.env.VITE_GEMINI_API_KEY
+const OLLAMA_API_KEY = () => import.meta.env.VITE_OLLAMA_API_KEY
+const OLLAMA_MODEL = () => import.meta.env.VITE_OLLAMA_MODEL || 'gemini-3-flash-preview:cloud'
 
 // Urgency level configuration
 export const URGENCY_LEVELS = {
@@ -86,17 +87,15 @@ Bạn KHÔNG phải AI thông thường - bạn là "Tâm An", trợ lý tâm l�
  * Also provides real-time assessment
  */
 export async function generateAIResponse(conversationHistory, studentMessage, priorAssessment = null) {
-    const apiKey = GEMINI_API_KEY()
+    const apiKey = OLLAMA_API_KEY()
+    const model = OLLAMA_MODEL()
 
-    if (!apiKey) {
-        console.error('❌ VITE_GEMINI_API_KEY is not set!')
-        return {
-            response: 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Tư vấn viên sẽ sớm liên hệ với bạn! ❤️',
-            assessment: null
-        }
+    if (apiKey) {
+        console.log('🔑 Ollama API Key found (length:', apiKey.length, ') - using client-side auth')
+    } else {
+        console.log('🔑 No client-side API key - relying on server proxy auth')
     }
-
-    console.log('🔑 Gemini API Key found (length:', apiKey.length, ')')
+    console.log('🤖 Using model:', model)
     console.log('💬 Conversation history length:', conversationHistory.length)
 
     const conversationText = conversationHistory
@@ -147,39 +146,38 @@ Mức độ khẩn cấp:
 Chỉ trả về JSON, không thêm text khác.`
 
     try {
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.7,
-                        maxOutputTokens: 500
-                    },
-                    safetySettings: [
-                        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-                        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-                        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-                        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
-                    ]
-                })
-            }
-        )
+        const headers = { 'Content-Type': 'application/json' }
+        if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
+
+        const response = await fetch('/ollama/api/chat', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                model,
+                messages: [
+                    { role: 'system', content: AI_SYSTEM_CONTEXT },
+                    { role: 'user', content: prompt }
+                ],
+                stream: false,
+                options: {
+                    temperature: 0.7,
+                    num_predict: 500
+                }
+            })
+        })
 
         if (!response.ok) {
             const errorText = await response.text()
-            console.error('❌ Gemini API error:', response.status, errorText)
+            console.error('❌ Ollama API error:', response.status, errorText)
             throw new Error(`API error: ${response.status} - ${errorText}`)
         }
 
         const data = await response.json()
-        console.log('✅ Gemini API response received')
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+        console.log('✅ Ollama API response received')
+        const text = data.message?.content || ''
 
         if (!text) {
-            console.warn('⚠️ Empty response from Gemini API')
+            console.warn('⚠️ Empty response from Ollama API')
         }
 
         const jsonMatch = text.match(/\{[\s\S]*\}/)
@@ -214,9 +212,10 @@ Chỉ trả về JSON, không thêm text khác.`
  * Generate comprehensive student assessment for counselors
  */
 export async function generateStudentAssessment(allMessages) {
-    const apiKey = GEMINI_API_KEY()
+    const apiKey = OLLAMA_API_KEY()
+    const model = OLLAMA_MODEL()
 
-    if (!apiKey || allMessages.length === 0) {
+    if (allMessages.length === 0) {
         return null
     }
 
@@ -259,33 +258,32 @@ Mức độ khẩn cấp:
 Chỉ trả về JSON.`
 
     try {
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.3,
-                        maxOutputTokens: 800
-                    },
-                    safetySettings: [
-                        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-                        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-                        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-                        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
-                    ]
-                })
-            }
-        )
+        const headers = { 'Content-Type': 'application/json' }
+        if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
+
+        const response = await fetch('/ollama/api/chat', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                model,
+                messages: [
+                    { role: 'system', content: 'Bạn là chuyên gia tâm lý học đường. Phân tích cuộc hội thoại và đưa ra đánh giá chi tiết cho tư vấn viên.' },
+                    { role: 'user', content: prompt }
+                ],
+                stream: false,
+                options: {
+                    temperature: 0.3,
+                    num_predict: 800
+                }
+            })
+        })
 
         if (!response.ok) {
             throw new Error(`API error: ${response.status}`)
         }
 
         const data = await response.json()
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+        const text = data.message?.content || ''
 
         const jsonMatch = text.match(/\{[\s\S]*\}/)
         if (jsonMatch) {

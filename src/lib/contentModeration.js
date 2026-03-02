@@ -1,13 +1,15 @@
-// Content Moderation using Google AI Studio API (Gemini)
+// Content Moderation using Ollama API
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent'
+const OLLAMA_API_KEY = import.meta.env.VITE_OLLAMA_API_KEY
+const OLLAMA_MODEL = import.meta.env.VITE_OLLAMA_MODEL || 'gemini-3-flash-preview:cloud'
+const OLLAMA_API_URL = '/ollama/api/chat'
 
 // Confidence threshold - below this, content goes to pending review
 const CONFIDENCE_THRESHOLD = 0.7
 
 // Debug: Log API key status (remove in production)
-console.log('Gemini API Key configured:', GEMINI_API_KEY ? 'Yes (length: ' + GEMINI_API_KEY.length + ')' : 'No')
+console.log('Ollama API Key configured:', OLLAMA_API_KEY ? 'Yes (length: ' + OLLAMA_API_KEY.length + ')' : 'No')
+console.log('Ollama Model:', OLLAMA_MODEL)
 
 // Flag levels
 export const FLAG_LEVELS = {
@@ -93,7 +95,7 @@ Content to analyze:
 Remember: Only output the JSON object, nothing else.`
 
 /**
- * Analyze content using Google AI Studio (Gemini)
+ * Analyze content using Ollama API
  * @param {string} content - The text content to analyze
  * @returns {Promise<{action: string, flagLevel: number, category: string, reasoning: string, keywords: string[]}>}
  */
@@ -108,10 +110,8 @@ export async function analyzeContent(content) {
     confidence: 0
   }
 
-  if (!GEMINI_API_KEY) {
-    console.warn('❌ Gemini API key not configured!')
-    console.warn('Make sure VITE_GEMINI_API_KEY is set in your .env file')
-    return pendingResult
+  if (!OLLAMA_API_KEY) {
+    console.log('🔑 No client-side API key - relying on server proxy auth')
   }
 
   if (!content || content.trim().length === 0) {
@@ -154,21 +154,25 @@ export async function analyzeContent(content) {
   }
 
   try {
-    console.log('🔍 Analyzing content with Gemini API...')
+    console.log('🔍 Analyzing content with Ollama API...')
     const prompt = MODERATION_PROMPT.replace('{CONTENT}', content)
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+    const headers = { 'Content-Type': 'application/json' }
+    if (OLLAMA_API_KEY) headers['Authorization'] = `Bearer ${OLLAMA_API_KEY}`
+
+    const response = await fetch(OLLAMA_API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify({
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: 'You are a content moderation AI. Respond only with valid JSON.' },
+          { role: 'user', content: prompt }
+        ],
+        stream: false,
+        options: {
           temperature: 0.1,
-          maxOutputTokens: 500
+          num_predict: 500
         }
       })
     })
@@ -177,7 +181,7 @@ export async function analyzeContent(content) {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('❌ Gemini API error:', response.status, errorText)
+      console.error('❌ Ollama API error:', response.status, errorText)
       return pendingResult
     }
 
@@ -185,7 +189,7 @@ export async function analyzeContent(content) {
     console.log('✅ API Response received:', data)
     
     // Extract the text response
-    const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text
+    const textResponse = data.message?.content
     
     if (!textResponse) {
       console.error('❌ No text in API response')
