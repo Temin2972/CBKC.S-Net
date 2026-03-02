@@ -123,7 +123,7 @@ export default function Register() {
 
   const validationSchema = {
     fullName: [validators.required('Vui lòng nhập tên hiển thị')],
-    username: [validators.required('Vui lòng nhập tên đăng nhập hoặc email'), validateUsernameOrEmail],
+    username: [validators.required('Vui lòng nhập tên đăng nhập'), validateUsernameOrEmail],
     password: [
       validators.required('Vui lòng nhập mật khẩu'),
       validators.minLength(PASSWORD_RULES.MIN_LENGTH, AUTH_MESSAGES.PASSWORD_TOO_SHORT),
@@ -214,32 +214,37 @@ export default function Register() {
 
           {/* Registration Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              name="fullName"
-              label="Tên hiển thị"
-              value={values.fullName}
-              onChange={handleChange}
-              placeholder="Tên bạn muốn hiển thị"
-              error={errors.fullName}
-              disabled={loading}
-              autoComplete="name"
-              variant="light"
-            />
+            <div>
+              <Input
+                name="fullName"
+                label="Tên hiển thị "
+                value={values.fullName}
+                onChange={handleChange}
+                placeholder="Tên bạn muốn hiển thị"
+                error={errors.fullName}
+                disabled={loading}
+                autoComplete="name"
+                variant="light"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Hiển thị với thầy cô tư vấn và trong cộng đồng, khuyến khích không dùng tên thật.
+              </p>
+            </div>
 
             <div>
               <Input
                 name="username"
-                label="Tên đăng nhập hoặc Email"
+                label="Tên đăng nhập"
                 value={values.username}
                 onChange={handleUsernameChange}
-                placeholder="username hoặc email@example.com"
+                placeholder="username"
                 error={errors.username}
                 disabled={loading}
                 autoComplete="username"
                 variant="light"
               />
               <p className="text-xs text-gray-400 mt-1">
-                Có thể dùng tên đăng nhập thông thường nếu không muốn dùng email.
+                  Chỉ được dùng để đăng nhập.
               </p>
             </div>
 

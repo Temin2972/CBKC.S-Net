@@ -153,7 +153,7 @@ export async function analyzeContent(content) {
         { role: 'user', content: prompt }
       ],
       temperature: 0.1,
-      maxTokens: 500
+      maxTokens: 1024
     })
 
     console.log('✅ API Response received')

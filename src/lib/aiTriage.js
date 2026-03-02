@@ -142,7 +142,7 @@ Chỉ trả về JSON, không thêm text khác.`
                 { role: 'user', content: prompt }
             ],
             temperature: 0.7,
-            maxTokens: 500
+            maxTokens: 2048
         })
 
         console.log('✅ Ollama API response received')
@@ -232,7 +232,7 @@ Chỉ trả về JSON.`
                 { role: 'user', content: prompt }
             ],
             temperature: 0.3,
-            maxTokens: 800
+            maxTokens: 1020
         })
 
         const jsonMatch = text.match(/\{[\s\S]*\}/)
