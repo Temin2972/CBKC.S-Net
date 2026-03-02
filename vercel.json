@@ -7,8 +7,8 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/ollama/(.*)",
-      "destination": "/api/ollama/$1"
+      "source": "/ollama/api/chat",
+      "destination": "/api/ollama-chat"
     },
     {
       "source": "/(.*)",
