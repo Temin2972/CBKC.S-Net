@@ -11,7 +11,6 @@ import { useForm, validators } from '../hooks/useForm'
 import { Input, PasswordInput, Button, Alert } from '../components/UI'
 import { ROUTES, PASSWORD_RULES } from '../constants'
 import { AUTH_MESSAGES, BUTTON_LABELS, FORM_LABELS } from '../constants/messages'
-import { isEmail } from '../utils/validation'
 import { moderateDisplayName } from '../lib/contentModeration'
 
 // Feature messages based on redirect origin
@@ -28,22 +27,11 @@ const FEATURE_MESSAGES = {
   },
 }
 
-// Username/Email validation - accepts either valid username or valid email
-const validateUsernameOrEmail = (value) => {
+// Username validation - only allows letters, numbers, and underscores
+const validateUsername = (value) => {
   if (!value || value.length < 3) {
     return 'Vui lòng nhập ít nhất 3 ký tự'
   }
-  
-  // If it looks like an email, validate as email
-  if (value.includes('@')) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(value)) {
-      return 'Email không hợp lệ'
-    }
-    return null
-  }
-  
-  // Otherwise validate as username
   if (!/^[a-zA-Z0-9_]+$/.test(value)) {
     return 'Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới'
   }
@@ -91,7 +79,7 @@ function InfoBanner() {
         <div className="text-sm">
           <p className="font-medium mb-0.5 text-teal-700">Dành cho học sinh</p>
           <p className="text-teal-600">
-            Dùng tên đăng nhập hoặc email để tạo tài khoản.
+            Dùng tên đăng nhập để tạo tài khoản.
           </p>
         </div>
       </div>
@@ -123,7 +111,7 @@ export default function Register() {
 
   const validationSchema = {
     fullName: [validators.required('Vui lòng nhập tên hiển thị')],
-    username: [validators.required('Vui lòng nhập tên đăng nhập'), validateUsernameOrEmail],
+    username: [validators.required('Vui lòng nhập tên đăng nhập'), validateUsername],
     password: [
       validators.required('Vui lòng nhập mật khẩu'),
       validators.minLength(PASSWORD_RULES.MIN_LENGTH, AUTH_MESSAGES.PASSWORD_TOO_SHORT),
@@ -150,28 +138,25 @@ export default function Register() {
 
       if (!validate(validationSchema)) return
 
-      // Check display name for inappropriate content
-      const nameCheck = moderateDisplayName(values.fullName)
+      setLoading(true)
+
+      // Check display name for inappropriate content (async - includes AI real-name check)
+      const nameCheck = await moderateDisplayName(values.fullName)
       if (!nameCheck.allowed) {
         setError(nameCheck.reason)
+        setLoading(false)
         return
       }
 
-      setLoading(true)
-
-      // Auto-detect if input is email
-      const useEmail = isEmail(values.username)
-      
       const { error: signUpError } = await signUpStudent(
         values.username,
         values.password,
-        values.fullName,
-        useEmail
+        values.fullName
       )
 
       if (signUpError) {
         if (signUpError.message?.includes('already registered')) {
-          setError(useEmail ? 'Email đã được sử dụng' : 'Tên đăng nhập đã tồn tại')
+          setError('Tên đăng nhập đã tồn tại')
         } else {
           setError(signUpError.message || 'Đã có lỗi xảy ra')
         }
@@ -231,22 +216,17 @@ export default function Register() {
               </p>
             </div>
 
-            <div>
-              <Input
-                name="username"
-                label="Tên đăng nhập"
-                value={values.username}
-                onChange={handleUsernameChange}
-                placeholder="username"
-                error={errors.username}
-                disabled={loading}
-                autoComplete="username"
-                variant="light"
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                  Chỉ được dùng để đăng nhập.
-              </p>
-            </div>
+            <Input
+              name="username"
+              label="Tên đăng nhập"
+              value={values.username}
+              onChange={handleUsernameChange}
+              placeholder="Chữ cái, số và dấu gạch dưới"
+              error={errors.username}
+              disabled={loading}
+              autoComplete="username"
+              variant="light"
+            />
 
             <PasswordInput
               name="password"

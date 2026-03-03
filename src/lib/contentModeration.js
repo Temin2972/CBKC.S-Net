@@ -69,13 +69,8 @@ Categories:
 {MEANINGLESS_CATEGORY}
 
 
-Response format:
-{
-  "category": "one of the categories above",
-  "confidence": 0.0 to 1.0,
-  "reasoning": "brief explanation in Vietnamese",
-  "keywords_detected": ["list", "of", "concerning", "words"]
-}
+Response format (KEEP IT SHORT - reasoning must be under 15 words):
+{"category":"one of the categories above","confidence":0.0 to 1.0,"reasoning":"very short Vietnamese explanation, max 15 words","keywords_detected":["list"]}
 
 IMPORTANT NOTES:
 - Be STRICT with Vietnamese slang - even subtle variations should be caught
@@ -179,14 +174,12 @@ export async function analyzeContent(content, contentType = 'post') {
       return pendingResult
     }
 
-    // Parse JSON from response
-    const jsonMatch = textResponse.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
+    // Parse JSON from response (with repair for truncated responses)
+    const analysis = parseAIResponse(textResponse)
+    if (!analysis) {
       console.error('❌ Could not parse JSON from response:', textResponse)
       return pendingResult
     }
-
-    const analysis = JSON.parse(jsonMatch[0])
     console.log('✅ Content analysis result:', analysis)
     
     // Check confidence - if too low, send to pending review
@@ -209,6 +202,69 @@ export async function analyzeContent(content, contentType = 'post') {
     console.error('❌ Content moderation error:', error)
     return pendingResult
   }
+}
+
+/**
+ * Parse AI JSON response with repair logic for truncated/malformed responses
+ * @param {string} text - Raw response text from AI
+ * @returns {object|null} Parsed analysis object, or null if unrecoverable
+ */
+function parseAIResponse(text) {
+  // Try direct JSON parse first
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[0])
+    } catch (e) {
+      console.warn('⚠️ JSON parse failed, attempting repair...')
+    }
+  }
+
+  // Extract the JSON-like portion starting from first {
+  const startIdx = text.indexOf('{')
+  if (startIdx === -1) return null
+  let jsonStr = text.slice(startIdx)
+
+  // Try to repair truncated JSON:
+  // 1. Close any unterminated string
+  const quoteCount = (jsonStr.match(/(?<!\\)"/g) || []).length
+  if (quoteCount % 2 !== 0) {
+    jsonStr += '"'
+  }
+
+  // 2. Close any unterminated array
+  const openBrackets = (jsonStr.match(/\[/g) || []).length
+  const closeBrackets = (jsonStr.match(/\]/g) || []).length
+  for (let i = 0; i < openBrackets - closeBrackets; i++) {
+    jsonStr += ']'
+  }
+
+  // 3. Close the object
+  if (!jsonStr.trimEnd().endsWith('}')) {
+    jsonStr += '}'
+  }
+
+  try {
+    return JSON.parse(jsonStr)
+  } catch (e) {
+    console.warn('⚠️ Repair parse failed, extracting fields via regex...')
+  }
+
+  // Last resort: regex extract the key fields we need
+  const categoryMatch = text.match(/"category"\s*:\s*"([^"]+)"/)
+  const confidenceMatch = text.match(/"confidence"\s*:\s*([\d.]+)/)
+  const reasoningMatch = text.match(/"reasoning"\s*:\s*"([^"]*)"?/)
+
+  if (categoryMatch) {
+    return {
+      category: categoryMatch[1],
+      confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) : 0.5,
+      reasoning: reasoningMatch ? reasoningMatch[1] : '',
+      keywords_detected: []
+    }
+  }
+
+  return null
 }
 
 /**
@@ -429,11 +485,12 @@ function mapCategoryToAction(analysis) {
 
 /**
  * Moderate a display name - simple accept/reject without counselor review.
- * Uses the same profanity and spam detection as community content moderation.
+ * Uses the same profanity and spam detection as community content moderation,
+ * plus AI-based real name detection via Ollama.
  * @param {string} displayName - The display name to check
- * @returns {{ allowed: boolean, reason: string }}
+ * @returns {Promise<{ allowed: boolean, reason: string }>}
  */
-export function moderateDisplayName(displayName) {
+export async function moderateDisplayName(displayName) {
   if (!displayName || displayName.trim().length === 0) {
     return { allowed: false, reason: 'Tên hiển thị không được để trống' }
   }
@@ -458,7 +515,70 @@ export function moderateDisplayName(displayName) {
     }
   }
 
+  // AI check: detect real names
+  try {
+    const aiResult = await checkRealName(name)
+    if (aiResult.isRealName) {
+      return {
+        allowed: false,
+        reason: 'Tên hiển thị có vẻ là tên thật tiếng Việt. Vui lòng sử dụng biệt danh hoặc tên ẩn danh để bảo vệ quyền riêng tư của bạn.'
+      }
+    }
+  } catch (err) {
+    // If AI check fails, allow the name through (don't block users due to API issues)
+    console.warn('⚠️ AI real-name check failed, allowing name:', err.message)
+  }
+
   return { allowed: true, reason: '' }
+}
+
+/**
+ * Use AI to detect if a display name looks like a real Vietnamese name.
+ * Foreign names (English, Japanese, Korean, etc.) are allowed.
+ * @param {string} name - The display name to check
+ * @returns {Promise<{ isRealName: boolean, reasoning: string }>}
+ */
+async function checkRealName(name) {
+  const prompt = `You are a name classifier for a Vietnamese student mental health platform. Vietnamese students must use nicknames/aliases, NOT their real Vietnamese names, to protect their privacy.
+
+Your task: Determine if the following display name is a REAL VIETNAMESE NAME.
+
+=== BLOCK these (is_real_name: true) ===
+Vietnamese full names: "Nguyễn Văn An", "Trần Thị Bích", "Lê Minh Anh", "Phạm Hồng Nhung"
+Vietnamese given names used alone: "Hương", "Tùng", "Linh", "Nam", "Phúc", "Thảo", "Hằng", "Đức", "Quân", "Trang"
+Vietnamese family + given combos: "Minh Anh", "Thanh Hà", "Quốc Bảo", "Thùy Linh"
+Common Vietnamese family names: Nguyễn, Trần, Lê, Phạm, Hoàng, Huỳnh, Phan, Vũ, Võ, Đặng, Bùi, Đỗ, Hồ, Ngô, Dương, Lý, Đinh, Mai, Trịnh, Đoàn
+
+=== ALLOW these (is_real_name: false) ===
+Foreign names in any language: "John", "Maria", "Tanaka", "Kim Soo", "Alex", "Emma"
+Creative/fun Vietnamese nicknames: "Mèo Con", "Bé Bông", "Gấu Bông", "Nắng"
+Internet-style names: "Star123", "CloudWalker", "xXDragonXx"
+Abstract/fictional names: "Luna", "Phoenix", "Shadow"
+Names with numbers or special characters
+
+IMPORTANT: Only flag Vietnamese real names. Foreign real names are ALLOWED.
+
+Respond ONLY with a JSON object:
+{"is_real_name": true/false, "reasoning": "brief explanation in Vietnamese, max 10 words"}
+
+Display name to check: "${name}"`
+
+  const response = await ollamaChat({
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.1,
+    maxTokens: 100
+  })
+
+  const jsonMatch = response.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) {
+    throw new Error('Could not parse AI response')
+  }
+
+  const result = JSON.parse(jsonMatch[0])
+  return {
+    isRealName: result.is_real_name === true,
+    reasoning: result.reasoning || ''
+  }
 }
 
 /**

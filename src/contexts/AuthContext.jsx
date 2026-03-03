@@ -65,49 +65,24 @@ export function AuthProvider({ children }) {
   }, [fetchUserRole])
 
   /**
-   * Sign up as a student with username or email
-   * @param {string} identifier - Username or email
+   * Sign up as a student with username
+   * @param {string} username - Username
    * @param {string} password - Password
    * @param {string} fullName - Full name
-   * @param {boolean} useEmail - Whether identifier is an email
    */
-  const signUpStudent = useCallback(async (identifier, password, fullName, useEmail = false) => {
+  const signUpStudent = useCallback(async (username, password, fullName) => {
     try {
-      const email = useEmail ? identifier : `${identifier}.student@${STUDENT_EMAIL_DOMAIN}`
+      const email = `${username}.student@${STUDENT_EMAIL_DOMAIN}`
 
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            username: useEmail ? null : identifier,
+            username,
             full_name: fullName,
             role: USER_ROLES.STUDENT,
           },
-        },
-      })
-
-      if (error) throw error
-      return { data, error: null }
-    } catch (error) {
-      console.error('Sign up error:', error)
-      return { data: null, error }
-    }
-  }, [])
-
-  /**
-   * Sign up with email (for counselors)
-   * @param {string} email - Email
-   * @param {string} password - Password
-   * @param {Object} metadata - User metadata
-   */
-  const signUpWithEmail = useCallback(async (email, password, metadata = {}) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: metadata,
         },
       })
 
@@ -187,9 +162,8 @@ export function AuthProvider({ children }) {
       signIn,
       signOut,
       signUpStudent,
-      signUpWithEmail,
     }),
-    [user, loading, userInfo, signIn, signOut, signUpStudent, signUpWithEmail]
+    [user, loading, userInfo, signIn, signOut, signUpStudent]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

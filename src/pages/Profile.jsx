@@ -135,14 +135,15 @@ export default function Profile() {
     setError('')
     setSaved(false)
 
-    // Check display name for inappropriate content
-    const nameCheck = moderateDisplayName(displayName)
+    setLoading(true)
+
+    // Check display name for inappropriate content (async - includes AI real-name check)
+    const nameCheck = await moderateDisplayName(displayName)
     if (!nameCheck.allowed) {
       setError(nameCheck.reason)
+      setLoading(false)
       return
     }
-
-    setLoading(true)
 
     try {
       const profileData = {
