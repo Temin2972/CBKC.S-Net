@@ -539,8 +539,7 @@ export async function moderateDisplayName(displayName) {
  * @returns {Promise<{ isRealName: boolean, reasoning: string }>}
  */
 async function checkRealName(name) {
-  // Use gpt-oss model which properly supports structured outputs (format parameter).
-  // The default gemini model ignores format and puts responses in the thinking field.
+  // Use gpt-oss model with structured outputs (format parameter) for reliable JSON responses.
   const response = await ollamaChat({
     messages: [
       {
@@ -548,7 +547,6 @@ async function checkRealName(name) {
         content: `Is "${name}" a real Vietnamese name? Only block Vietnamese names (surnames: Nguyễn, Trần, Lê, Phạm, Hoàng, Vũ, Đặng, Bùi... given names: Linh, Hương, Tùng, Nam, Phúc, Minh, Anh, Đức, Quân, Trang...). Allow foreign names (John, Maria, Alex) and nicknames (Mèo Con, Star123, Bé Bông). Respond with JSON.`
       }
     ],
-    model: 'gpt-oss',
     temperature: 0,
     maxTokens: 50,
     format: {

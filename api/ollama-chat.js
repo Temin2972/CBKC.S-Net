@@ -6,7 +6,7 @@
  * 
  * Environment variable required in Vercel dashboard:
  *   OLLAMA_API_KEY - Your Ollama Cloud API key
- *   OLLAMA_MODEL   - (optional) defaults to gemini-3-flash-preview:cloud
+ *   OLLAMA_MODEL   - (optional) defaults to gpt-oss:20b-cloud
  */
 
 export default async function handler(req, res) {

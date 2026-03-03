@@ -12,7 +12,7 @@
  */
 
 const OLLAMA_API_KEY = import.meta.env.VITE_OLLAMA_API_KEY || ''
-const OLLAMA_MODEL = import.meta.env.VITE_OLLAMA_MODEL || 'gemini-3-flash-preview:cloud'
+const OLLAMA_MODEL = import.meta.env.VITE_OLLAMA_MODEL || 'gpt-oss:20b-cloud'
 const OLLAMA_BASE_URL = import.meta.env.VITE_OLLAMA_BASE_URL || 'https://ollama.com'
 
 // In dev mode, use the Vite proxy path. In production, also use /ollama path (Vercel rewrites it).
