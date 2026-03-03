@@ -53,39 +53,15 @@ export function usePosts(currentUserId) {
 
   const toggleLike = async (postId, isCurrentlyLiked) => {
     try {
-      // Get current post
-      const { data: post, error: fetchError } = await supabase
-        .from('posts')
-        .select('liked_by')
-        .eq('id', postId)
-        .single()
+      // Use RPC function to toggle like (bypasses RLS securely)
+      const { data, error } = await supabase
+        .rpc('toggle_post_like', { target_post_id: postId })
 
-      if (fetchError) throw fetchError
+      if (error) throw error
 
-      let newLikedBy = post.liked_by || []
+      const newLikedBy = data?.liked_by || []
 
-      if (isCurrentlyLiked) {
-        // Remove user ID from array
-        newLikedBy = newLikedBy.filter(id => id !== currentUserId)
-      } else {
-        // Add user ID to array (check if not already there to prevent duplicates)
-        if (!newLikedBy.includes(currentUserId)) {
-          newLikedBy = [...newLikedBy, currentUserId]
-        } else {
-          // Already liked - this shouldn't happen, but handle it gracefully
-          return { error: null }
-        }
-      }
-
-      // Update the post
-      const { error: updateError } = await supabase
-        .from('posts')
-        .update({ liked_by: newLikedBy })
-        .eq('id', postId)
-
-      if (updateError) throw updateError
-
-      // Optimistically update local state
+      // Update local state with response from RPC
       setPosts(prevPosts => 
         prevPosts.map(p => 
           p.id === postId 

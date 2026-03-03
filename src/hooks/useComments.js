@@ -281,38 +281,15 @@ export function useComments(postId, currentUserId) {
     }
 
     try {
-      // Get current comment
-      const { data: comment, error: fetchError } = await supabase
-        .from('comments')
-        .select('liked_by')
-        .eq('id', commentId)
-        .single()
+      // Use RPC function to toggle like (bypasses RLS securely)
+      const { data, error } = await supabase
+        .rpc('toggle_comment_like', { target_comment_id: commentId })
 
-      if (fetchError) throw fetchError
+      if (error) throw error
 
-      let newLikedBy = comment.liked_by || []
+      const newLikedBy = data?.liked_by || []
 
-      if (isCurrentlyLiked) {
-        // Unlike: remove user ID
-        newLikedBy = newLikedBy.filter(id => id !== currentUserId)
-      } else {
-        // Like: add user ID (check for duplicates)
-        if (!newLikedBy.includes(currentUserId)) {
-          newLikedBy = [...newLikedBy, currentUserId]
-        } else {
-          return { error: null }
-        }
-      }
-
-      // Update the comment
-      const { error: updateError } = await supabase
-        .from('comments')
-        .update({ liked_by: newLikedBy })
-        .eq('id', commentId)
-
-      if (updateError) throw updateError
-
-      // Optimistically update local state
+      // Update local state with response from RPC
       updateCommentInState(commentId, newLikedBy)
 
       return { error: null }
