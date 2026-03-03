@@ -70,23 +70,6 @@ function FeatureMessage({ message }) {
   )
 }
 
-// Info banner component
-function InfoBanner() {
-  return (
-    <div className="mb-5 p-3 bg-teal-50 border border-teal-100 rounded-xl">
-      <div className="flex items-start gap-2">
-        <AlertCircle size={18} className="text-teal-600 mt-0.5 flex-shrink-0" />
-        <div className="text-sm">
-          <p className="font-medium mb-0.5 text-teal-700">Dành cho học sinh</p>
-          <p className="text-teal-600">
-            Dùng tên đăng nhập để tạo tài khoản.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function Register() {
   const { signUpStudent } = useAuth()
   const { quote, loading: quoteLoading } = useQuotes()
@@ -187,11 +170,9 @@ export default function Register() {
             <div className="inline-flex items-center justify-center w-14 h-14 bg-teal-50 rounded-2xl mb-3">
               <Heart size={28} className="text-teal-500" strokeWidth={1.5} />
             </div>
-            <h1 className="text-2xl font-semibold text-gray-800 mb-1">Đăng ký Học sinh</h1>
+            <h1 className="text-2xl font-semibold text-gray-800 mb-1">Đăng ký tài khoản/h1>
             <p className="text-gray-500 text-sm">Tạo tài khoản để được hỗ trợ</p>
           </header>
-
-          <InfoBanner />
 
           <Alert variant="error" className="mb-4">
             {error}
@@ -202,7 +183,7 @@ export default function Register() {
             <div>
               <Input
                 name="fullName"
-                label="Tên hiển thị "
+                label="Tên hiển thị ( Không sử dụng tên thật )"
                 value={values.fullName}
                 onChange={handleChange}
                 placeholder="Tên bạn muốn hiển thị"
@@ -212,21 +193,26 @@ export default function Register() {
                 variant="light"
               />
               <p className="text-xs text-gray-400 mt-1">
-                Hiển thị với thầy cô tư vấn và trong cộng đồng, khuyến khích không dùng tên thật.
+                Hiển thị với thầy cô tư vấn và trong cộng đồng, không sử dụng tên thật.
               </p>
             </div>
 
-            <Input
-              name="username"
-              label="Tên đăng nhập"
-              value={values.username}
-              onChange={handleUsernameChange}
-              placeholder="Chữ cái, số và dấu gạch dưới"
-              error={errors.username}
-              disabled={loading}
-              autoComplete="username"
-              variant="light"
-            />
+            <div>
+              <Input
+                name="username"
+                label="Tên đăng nhập"
+                value={values.username}
+                onChange={handleUsernameChange}
+                placeholder="Chữ cái, số và dấu gạch dưới"
+                error={errors.username}
+                disabled={loading}
+                autoComplete="username"
+                variant="light"
+             />
+              <p className="text-xs text-gray-400 mt-1">
+                Chỉ được dùng để đăng nhập, không hiển thị công khai
+              </p>
+            </div>
 
             <PasswordInput
               name="password"
