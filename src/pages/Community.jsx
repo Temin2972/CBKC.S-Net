@@ -269,7 +269,7 @@ export default function Community() {
       return
     }
 
-    // Continue with posting (ALLOW or FLAG_MILD)
+    // All AI-approved content goes to pending_content for counselor review
     setUploading(true)
     let imageUrl = null
 
@@ -289,39 +289,42 @@ export default function Community() {
 
     const sanitizedContent = DOMPurify.sanitize(newPost)
 
-    // Create post with flag level and topic
-    const { data: postData, error } = await supabase
-      .from('posts')
+    // If mild concern, also save to flagged content for visibility
+    if (analysis.action === MODERATION_ACTIONS.FLAG_MILD) {
+      await saveFlaggedContent(sanitizedContent, analysis, 'post')
+    }
+
+    // Route to pending_content for counselor approval
+    const pendingReason = analysis.action === MODERATION_ACTIONS.FLAG_MILD
+      ? `AI flagged (${analysis.category}): ${analysis.reasoning}`
+      : 'Nội dung đã qua kiểm duyệt AI, chờ tư vấn viên duyệt'
+
+    const { error } = await supabase
+      .from('pending_content')
       .insert({
-        author_id: isAnonymous ? null : user.id,
+        user_id: user.id,
+        content_type: 'post',
         content: sanitizedContent,
         image_url: imageUrl,
-        flag_level: analysis.flagLevel,
-        topic: postTopic
+        pending_reason: pendingReason,
+        status: 'pending',
+        topic: postTopic,
+        is_anonymous: isAnonymous
       })
-      .select()
-      .single()
 
     if (!error) {
-      // If mild concern, save to flagged content
-      if (analysis.action === MODERATION_ACTIONS.FLAG_MILD && postData) {
-        await saveFlaggedContent(sanitizedContent, analysis, 'post', postData.id)
-      }
-
       setNewPost('')
       setPostTopic(POST_TOPICS.MENTAL)
       removeImage()
       setShowCreateModal(false)
 
-      // Show mild notification if flagged
-      if (analysis.action === MODERATION_ACTIONS.FLAG_MILD) {
-        const moderationMsg = getModerationMessage(analysis.action, analysis.category)
-        setModerationModal({
-          isOpen: true,
-          action: analysis.action,
-          ...moderationMsg
-        })
-      }
+      setModerationModal({
+        isOpen: true,
+        action: MODERATION_ACTIONS.PENDING,
+        title: '📝 Bài viết đang chờ duyệt',
+        message: 'Bài viết của bạn đã được gửi thành công và đang chờ tư vấn viên xem xét trước khi hiển thị công khai. Thường mất 1-2 giờ trong giờ làm việc.',
+        showChatSuggestion: false
+      })
     }
 
     setUploading(false)
@@ -473,7 +476,7 @@ export default function Community() {
                       <Eye size={18} className="text-gray-600" />
                     )}
                     <span className="text-sm font-medium text-gray-700">
-                      {isAnonymous ? 'Đang ẩn danh' : 'Hiển thị tên thật'}
+                      {isAnonymous ? 'Đang ẩn danh' : 'Đang hiển thị tên thật'}
                     </span>
                   </div>
                   <button

@@ -233,41 +233,42 @@ export function useComments(postId, currentUserId) {
       }
     }
 
-    // Continue with posting (ALLOW or FLAG_MILD)
+    // All AI-approved content goes to pending_content for counselor review
     try {
-      const { data, error } = await supabase
-        .from('comments')
+      // If mild concern, also save to flagged content for visibility
+      if (analysis.action === MODERATION_ACTIONS.FLAG_MILD) {
+        await saveFlaggedContent(content.trim(), analysis, null)
+      }
+
+      const pendingReason = analysis.action === MODERATION_ACTIONS.FLAG_MILD
+        ? `AI flagged (${analysis.category}): ${analysis.reasoning}`
+        : 'Nội dung đã qua kiểm duyệt AI, chờ tư vấn viên duyệt'
+
+      const { error } = await supabase
+        .from('pending_content')
         .insert({
+          user_id: currentUserId,
+          content_type: 'comment',
           post_id: postId,
-          author_id: isAnonymous ? null : currentUserId,
           parent_comment_id: parentCommentId,
           content: content.trim(),
-          flag_level: analysis.flagLevel
+          pending_reason: pendingReason,
+          status: 'pending',
+          is_anonymous: isAnonymous
         })
-        .select()
 
       if (error) {
-        console.error('Error creating comment:', error)
+        console.error('Error saving pending comment:', error)
         throw error
       }
 
-      console.log('Comment created:', data)
-
-      // If mild concern, save to flagged content
-      if (analysis.action === MODERATION_ACTIONS.FLAG_MILD && data && data[0]) {
-        await saveFlaggedContent(content.trim(), analysis, data[0].id)
-      }
-      
-      // Immediately refetch to show the new comment
-      await fetchComments()
-      
       return { 
         error: null, 
-        moderation: analysis.action === MODERATION_ACTIONS.FLAG_MILD ? {
-          flagged: true,
-          action: analysis.action,
+        moderation: {
+          pending: true,
+          action: MODERATION_ACTIONS.PENDING,
           category: analysis.category
-        } : null
+        }
       }
     } catch (error) {
       console.error('Create comment exception:', error)

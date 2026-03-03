@@ -613,8 +613,8 @@ export function getModerationMessage(action, category) {
 
     case MODERATION_ACTIONS.PENDING:
       return {
-        title: 'Đang chờ duyệt',
-        message: 'Bài viết của bạn đã được gửi và đang chờ tư vấn viên xem xét. Bạn sẽ được thông báo khi bài viết được duyệt.',
+        title: '📝 Đang chờ duyệt',
+        message: 'Nội dung của bạn đã được gửi thành công và đang chờ tư vấn viên xem xét trước khi hiển thị công khai. Thường mất 1-2 giờ trong giờ làm việc.',
         showChatSuggestion: false
       }
 

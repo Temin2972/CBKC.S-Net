@@ -79,6 +79,20 @@ export default function CommentForm({
           </button>
         )}
       </div>
+      {/* Anonymous status text */}
+      <div className={`mt-1.5 flex items-center gap-1 text-xs ${isAnonymous ? 'text-purple-600' : 'text-gray-400'} ${isReply ? '' : ''}`}>
+        {isAnonymous ? (
+          <>
+            <EyeOff size={12} />
+            <span>Đang đăng ẩn danh — tên của bạn sẽ không hiển thị</span>
+          </>
+        ) : (
+          <>
+            <Eye size={12} />
+            <span>Đang đăng công khai — tên của bạn sẽ hiển thị</span>
+          </>
+        )}
+      </div>
     </form>
   )
 }
