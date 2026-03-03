@@ -539,14 +539,17 @@ export async function moderateDisplayName(displayName) {
  * @returns {Promise<{ isRealName: boolean, reasoning: string }>}
  */
 async function checkRealName(name) {
-  const callAI = () => ollamaChat({
+  // Use gpt-oss model which properly supports structured outputs (format parameter).
+  // The default gemini model ignores format and puts responses in the thinking field.
+  const response = await ollamaChat({
     messages: [
       {
         role: 'user',
-        content: `Is "${name}" a real Vietnamese name? Only block Vietnamese names (Nguyễn, Trần, Lê, Phạm, Hoàng, Vũ, Linh, Hương, Tùng, Nam, Minh Anh, etc). Allow foreign names (John, Maria, Alex) and nicknames (Mèo Con, Star123, Bé Bông).`
+        content: `Is "${name}" a real Vietnamese name? Only block Vietnamese names (surnames: Nguyễn, Trần, Lê, Phạm, Hoàng, Vũ, Đặng, Bùi... given names: Linh, Hương, Tùng, Nam, Phúc, Minh, Anh, Đức, Quân, Trang...). Allow foreign names (John, Maria, Alex) and nicknames (Mèo Con, Star123, Bé Bông). Respond with JSON.`
       }
     ],
-    temperature: 0.1,
+    model: 'gpt-oss',
+    temperature: 0,
     maxTokens: 50,
     format: {
       type: 'object',
@@ -557,32 +560,16 @@ async function checkRealName(name) {
     }
   })
 
-  // Try up to 2 times (model sometimes returns empty on first attempt)
-  let response = await callAI()
   console.log('🔍 AI real-name check response:', response)
 
   if (!response || response.trim().length === 0) {
-    console.warn('⚠️ Empty response, retrying...')
-    response = await callAI()
-    console.log('🔍 AI real-name check retry response:', response)
+    throw new Error('Empty response from AI')
   }
 
-  if (!response || response.trim().length === 0) {
-    throw new Error('Empty response from AI after retry')
-  }
-
-  // Try JSON first (structured output), fall back to text parsing
-  try {
-    const result = JSON.parse(response)
-    return {
-      isRealName: result.is_vietnamese_name === true,
-      reasoning: response
-    }
-  } catch {
-    // Model returned plain text instead of JSON — parse yes/no/true/false
-    const lower = response.trim().toLowerCase()
-    const isRealName = /^(yes|true|đúng|có)/.test(lower)
-    return { isRealName, reasoning: response }
+  const result = JSON.parse(response)
+  return {
+    isRealName: result.is_vietnamese_name === true,
+    reasoning: response
   }
 }
 
