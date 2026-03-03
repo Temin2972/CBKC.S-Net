@@ -566,15 +566,32 @@ Display name to check: "${name}"`
   const response = await ollamaChat({
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.1,
-    maxTokens: 100
+    maxTokens: 200
   })
 
-  const jsonMatch = response.match(/\{[\s\S]*\}/)
+  console.log('🔍 AI real-name check raw response:', JSON.stringify(response))
+
+  // Try to extract JSON from response - handle various wrapper formats
+  const jsonMatch = response.match(/\{[\s\S]*?\}/)
   if (!jsonMatch) {
-    throw new Error('Could not parse AI response')
+    // Fallback: try to detect a simple true/false if JSON parsing fails
+    const lower = response.toLowerCase()
+    if (lower.includes('"is_real_name": true') || lower.includes('"is_real_name":true')) {
+      return { isRealName: true, reasoning: 'AI detected Vietnamese real name' }
+    }
+    if (lower.includes('"is_real_name": false') || lower.includes('"is_real_name":false')) {
+      return { isRealName: false, reasoning: '' }
+    }
+    throw new Error('Could not parse AI response: ' + response.substring(0, 200))
   }
 
-  const result = JSON.parse(jsonMatch[0])
+  let result
+  try {
+    result = JSON.parse(jsonMatch[0])
+  } catch (parseErr) {
+    throw new Error('Invalid JSON in AI response: ' + jsonMatch[0].substring(0, 200))
+  }
+
   return {
     isRealName: result.is_real_name === true,
     reasoning: result.reasoning || ''
