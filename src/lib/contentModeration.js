@@ -539,63 +539,27 @@ export async function moderateDisplayName(displayName) {
  * @returns {Promise<{ isRealName: boolean, reasoning: string }>}
  */
 async function checkRealName(name) {
-  const prompt = `You are a name classifier for a Vietnamese student mental health platform. Vietnamese students must use nicknames/aliases, NOT their real Vietnamese names, to protect their privacy.
-
-Your task: Determine if the following display name is a REAL VIETNAMESE NAME.
-
-=== BLOCK these (is_real_name: true) ===
-Vietnamese full names: "Nguyễn Văn An", "Trần Thị Bích", "Lê Minh Anh", "Phạm Hồng Nhung"
-Vietnamese given names used alone: "Hương", "Tùng", "Linh", "Nam", "Phúc", "Thảo", "Hằng", "Đức", "Quân", "Trang"
-Vietnamese family + given combos: "Minh Anh", "Thanh Hà", "Quốc Bảo", "Thùy Linh"
-Common Vietnamese family names: Nguyễn, Trần, Lê, Phạm, Hoàng, Huỳnh, Phan, Vũ, Võ, Đặng, Bùi, Đỗ, Hồ, Ngô, Dương, Lý, Đinh, Mai, Trịnh, Đoàn
-
-=== ALLOW these (is_real_name: false) ===
-Foreign names in any language: "John", "Maria", "Tanaka", "Kim Soo", "Alex", "Emma"
-Creative/fun Vietnamese nicknames: "Mèo Con", "Bé Bông", "Gấu Bông", "Nắng"
-Internet-style names: "Star123", "CloudWalker", "xXDragonXx"
-Abstract/fictional names: "Luna", "Phoenix", "Shadow"
-Names with numbers or special characters
-
-IMPORTANT: Only flag Vietnamese real names. Foreign real names are ALLOWED.
-
-Respond ONLY with a JSON object:
-{"is_real_name": true/false, "reasoning": "brief explanation in Vietnamese, max 10 words"}
-
-Display name to check: "${name}"`
-
   const response = await ollamaChat({
-    messages: [{ role: 'user', content: prompt }],
+    messages: [
+      {
+        role: 'system',
+        content: 'You classify display names. Reply with ONLY "true" or "false", nothing else.'
+      },
+      {
+        role: 'user',
+        content: `Is "${name}" a real Vietnamese name? Vietnamese names use surnames like Nguyễn, Trần, Lê, Phạm, Hoàng, Vũ, Đặng, Bùi, etc. or common Vietnamese given names like Linh, Hương, Tùng, Nam, Phúc, Thảo, Đức, Quân, Minh, Anh, Trang, Hà. Foreign names (John, Maria, Alex, Emma, Tanaka) and nicknames (Mèo Con, Star123, Bé Bông) are NOT Vietnamese names. Answer only "true" or "false".`
+      }
+    ],
     temperature: 0.1,
-    maxTokens: 200
+    maxTokens: 10
   })
 
-  console.log('🔍 AI real-name check raw response:', JSON.stringify(response))
+  console.log('🔍 AI real-name check response:', response)
 
-  // Try to extract JSON from response - handle various wrapper formats
-  const jsonMatch = response.match(/\{[\s\S]*?\}/)
-  if (!jsonMatch) {
-    // Fallback: try to detect a simple true/false if JSON parsing fails
-    const lower = response.toLowerCase()
-    if (lower.includes('"is_real_name": true') || lower.includes('"is_real_name":true')) {
-      return { isRealName: true, reasoning: 'AI detected Vietnamese real name' }
-    }
-    if (lower.includes('"is_real_name": false') || lower.includes('"is_real_name":false')) {
-      return { isRealName: false, reasoning: '' }
-    }
-    throw new Error('Could not parse AI response: ' + response.substring(0, 200))
-  }
+  const answer = response.trim().toLowerCase()
+  const isRealName = answer === 'true' || answer.startsWith('true')
 
-  let result
-  try {
-    result = JSON.parse(jsonMatch[0])
-  } catch (parseErr) {
-    throw new Error('Invalid JSON in AI response: ' + jsonMatch[0].substring(0, 200))
-  }
-
-  return {
-    isRealName: result.is_real_name === true,
-    reasoning: result.reasoning || ''
-  }
+  return { isRealName, reasoning: answer }
 }
 
 /**
