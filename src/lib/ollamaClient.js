@@ -30,7 +30,7 @@ console.log(`🤖 Ollama Client: mode=${isDev ? 'dev' : 'production'}, model=${O
  * @param {string} [options.model] - Model override
  * @returns {Promise<string>} The assistant's response text
  */
-export async function ollamaChat({ messages, temperature = 0.7, maxTokens = 1020, model = null }) {
+export async function ollamaChat({ messages, temperature = 0.7, maxTokens = 1020, model = null, format = null, think = 'low' }) {
   const headers = { 'Content-Type': 'application/json' }
   
   // Add auth header if client-side key is available (dev mode)
@@ -38,19 +38,26 @@ export async function ollamaChat({ messages, temperature = 0.7, maxTokens = 1020
     headers['Authorization'] = `Bearer ${OLLAMA_API_KEY}`
   }
 
+  const body = {
+    model: model || OLLAMA_MODEL,
+    messages,
+    stream: false,
+    think,  // GPT-OSS only accepts 'low'|'medium'|'high', true/false is ignored
+    options: {
+      temperature,
+      num_predict: maxTokens
+    }
+  }
+
+  // Add structured output format if provided (forces response into message.content)
+  if (format) {
+    body.format = format
+  }
+
   const response = await fetch(API_CHAT_URL, {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      model: model || OLLAMA_MODEL,
-      messages,
-      stream: false,
-      think: false, // Disable thinking mode - it wastes tokens and truncates actual response
-      options: {
-        temperature,
-        num_predict: maxTokens
-      }
-    })
+    body: JSON.stringify(body)
   })
 
   if (!response.ok) {
@@ -60,7 +67,6 @@ export async function ollamaChat({ messages, temperature = 0.7, maxTokens = 1020
   }
 
   const data = await response.json()
-  console.log('📦 Ollama full response:', JSON.stringify(data).substring(0, 500))
   let content = data.message?.content || data.response || ''
 
   // Strip markdown code blocks if model wraps response in ```json ... ```

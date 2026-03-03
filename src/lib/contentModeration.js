@@ -539,30 +539,36 @@ export async function moderateDisplayName(displayName) {
  * @returns {Promise<{ isRealName: boolean, reasoning: string }>}
  */
 async function checkRealName(name) {
+  // Use structured output to force a clean JSON response into message.content
   const response = await ollamaChat({
     messages: [
       {
         role: 'user',
-        content: `Classify this display name: "${name}"
-Is it a real Vietnamese name? (Vietnamese surnames: Nguyễn, Trần, Lê, Phạm, Hoàng, Vũ, Đặng, Bùi... or Vietnamese given names: Linh, Hương, Tùng, Nam, Phúc, Thảo, Đức, Quân, Minh, Anh, Trang...)
-Foreign names like John, Maria, Alex, Emma and nicknames like Mèo Con, Star123, Bé Bông are NOT Vietnamese names.
-Reply with ONLY the word "true" or "false". No other text.`
+        content: `Is "${name}" a real Vietnamese name? Only block Vietnamese names (Nguyễn, Trần, Lê, Phạm, Hoàng, Vũ, Linh, Hương, Tùng, Nam, Minh Anh, etc). Allow foreign names (John, Maria, Alex) and nicknames (Mèo Con, Star123, Bé Bông).`
       }
     ],
     temperature: 0.1,
-    maxTokens: 10
+    maxTokens: 50,
+    format: {
+      type: 'object',
+      properties: {
+        is_vietnamese_name: { type: 'boolean' }
+      },
+      required: ['is_vietnamese_name']
+    }
   })
 
-  console.log('🔍 AI real-name check response:', JSON.stringify(response))
+  console.log('🔍 AI real-name check response:', response)
 
   if (!response || response.trim().length === 0) {
     throw new Error('Empty response from AI')
   }
 
-  const answer = response.trim().toLowerCase()
-  const isRealName = answer === 'true' || answer.startsWith('true')
-
-  return { isRealName, reasoning: answer }
+  const result = JSON.parse(response)
+  return {
+    isRealName: result.is_vietnamese_name === true,
+    reasoning: response
+  }
 }
 
 /**
