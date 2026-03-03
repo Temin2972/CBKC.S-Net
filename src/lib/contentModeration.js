@@ -564,10 +564,18 @@ async function checkRealName(name) {
     throw new Error('Empty response from AI')
   }
 
-  const result = JSON.parse(response)
-  return {
-    isRealName: result.is_vietnamese_name === true,
-    reasoning: response
+  // Try JSON first (structured output), fall back to text parsing
+  try {
+    const result = JSON.parse(response)
+    return {
+      isRealName: result.is_vietnamese_name === true,
+      reasoning: response
+    }
+  } catch {
+    // Model returned plain text instead of JSON — parse yes/no/true/false
+    const lower = response.trim().toLowerCase()
+    const isRealName = /^(yes|true|đúng|có)/.test(lower)
+    return { isRealName, reasoning: response }
   }
 }
 
