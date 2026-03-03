@@ -539,8 +539,7 @@ export async function moderateDisplayName(displayName) {
  * @returns {Promise<{ isRealName: boolean, reasoning: string }>}
  */
 async function checkRealName(name) {
-  // Use structured output to force a clean JSON response into message.content
-  const response = await ollamaChat({
+  const callAI = () => ollamaChat({
     messages: [
       {
         role: 'user',
@@ -558,10 +557,18 @@ async function checkRealName(name) {
     }
   })
 
+  // Try up to 2 times (model sometimes returns empty on first attempt)
+  let response = await callAI()
   console.log('🔍 AI real-name check response:', response)
 
   if (!response || response.trim().length === 0) {
-    throw new Error('Empty response from AI')
+    console.warn('⚠️ Empty response, retrying...')
+    response = await callAI()
+    console.log('🔍 AI real-name check retry response:', response)
+  }
+
+  if (!response || response.trim().length === 0) {
+    throw new Error('Empty response from AI after retry')
   }
 
   // Try JSON first (structured output), fall back to text parsing
