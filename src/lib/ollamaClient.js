@@ -60,7 +60,8 @@ export async function ollamaChat({ messages, temperature = 0.7, maxTokens = 1020
   }
 
   const data = await response.json()
-  let content = data.message?.content || ''
+  console.log('📦 Ollama full response:', JSON.stringify(data).substring(0, 500))
+  let content = data.message?.content || data.response || ''
 
   // Strip markdown code blocks if model wraps response in ```json ... ```
   content = content.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim()

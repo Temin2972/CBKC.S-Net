@@ -542,19 +542,22 @@ async function checkRealName(name) {
   const response = await ollamaChat({
     messages: [
       {
-        role: 'system',
-        content: 'You classify display names. Reply with ONLY "true" or "false", nothing else.'
-      },
-      {
         role: 'user',
-        content: `Is "${name}" a real Vietnamese name? Vietnamese names use surnames like Nguyễn, Trần, Lê, Phạm, Hoàng, Vũ, Đặng, Bùi, etc. or common Vietnamese given names like Linh, Hương, Tùng, Nam, Phúc, Thảo, Đức, Quân, Minh, Anh, Trang, Hà. Foreign names (John, Maria, Alex, Emma, Tanaka) and nicknames (Mèo Con, Star123, Bé Bông) are NOT Vietnamese names. Answer only "true" or "false".`
+        content: `Classify this display name: "${name}"
+Is it a real Vietnamese name? (Vietnamese surnames: Nguyễn, Trần, Lê, Phạm, Hoàng, Vũ, Đặng, Bùi... or Vietnamese given names: Linh, Hương, Tùng, Nam, Phúc, Thảo, Đức, Quân, Minh, Anh, Trang...)
+Foreign names like John, Maria, Alex, Emma and nicknames like Mèo Con, Star123, Bé Bông are NOT Vietnamese names.
+Reply with ONLY the word "true" or "false". No other text.`
       }
     ],
     temperature: 0.1,
     maxTokens: 10
   })
 
-  console.log('🔍 AI real-name check response:', response)
+  console.log('🔍 AI real-name check response:', JSON.stringify(response))
+
+  if (!response || response.trim().length === 0) {
+    throw new Error('Empty response from AI')
+  }
 
   const answer = response.trim().toLowerCase()
   const isRealName = answer === 'true' || answer.startsWith('true')
