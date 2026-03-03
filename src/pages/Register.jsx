@@ -170,7 +170,7 @@ export default function Register() {
             <div className="inline-flex items-center justify-center w-14 h-14 bg-teal-50 rounded-2xl mb-3">
               <Heart size={28} className="text-teal-500" strokeWidth={1.5} />
             </div>
-            <h1 className="text-2xl font-semibold text-gray-800 mb-1">Đăng ký tài khoản/h1>
+            <h1 className="text-2xl font-semibold text-gray-800 mb-1">Đăng ký tài khoản</h1>
             <p className="text-gray-500 text-sm">Tạo tài khoản để được hỗ trợ</p>
           </header>
 
