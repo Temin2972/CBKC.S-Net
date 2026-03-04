@@ -14,6 +14,7 @@
     "@vercel/speed-insights": "^1.3.1",
     "dompurify": "^3.0.8",
     "lucide-react": "^0.263.1",
+    "ollama": "^0.6.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.0"

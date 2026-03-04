@@ -164,22 +164,22 @@ export async function analyzeContent(content, contentType = 'post') {
         { role: 'user', content: prompt }
       ],
       temperature: 0.1,
-      maxTokens: 1024
+      maxTokens: 1024,
+      format: {
+        type: 'object',
+        properties: {
+          category: { type: 'string' },
+          confidence: { type: 'number' },
+          reasoning: { type: 'string' },
+          keywords_detected: { type: 'array', items: { type: 'string' } }
+        },
+        required: ['category', 'confidence', 'reasoning', 'keywords_detected']
+      }
     })
 
     console.log('✅ API Response received')
-    
-    if (!textResponse) {
-      console.error('❌ No text in API response')
-      return pendingResult
-    }
 
-    // Parse JSON from response (with repair for truncated responses)
-    const analysis = parseAIResponse(textResponse)
-    if (!analysis) {
-      console.error('❌ Could not parse JSON from response:', textResponse)
-      return pendingResult
-    }
+    const analysis = JSON.parse(textResponse)
     console.log('✅ Content analysis result:', analysis)
     
     // Check confidence - if too low, send to pending review
@@ -204,68 +204,7 @@ export async function analyzeContent(content, contentType = 'post') {
   }
 }
 
-/**
- * Parse AI JSON response with repair logic for truncated/malformed responses
- * @param {string} text - Raw response text from AI
- * @returns {object|null} Parsed analysis object, or null if unrecoverable
- */
-function parseAIResponse(text) {
-  // Try direct JSON parse first
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (jsonMatch) {
-    try {
-      return JSON.parse(jsonMatch[0])
-    } catch (e) {
-      console.warn('⚠️ JSON parse failed, attempting repair...')
-    }
-  }
 
-  // Extract the JSON-like portion starting from first {
-  const startIdx = text.indexOf('{')
-  if (startIdx === -1) return null
-  let jsonStr = text.slice(startIdx)
-
-  // Try to repair truncated JSON:
-  // 1. Close any unterminated string
-  const quoteCount = (jsonStr.match(/(?<!\\)"/g) || []).length
-  if (quoteCount % 2 !== 0) {
-    jsonStr += '"'
-  }
-
-  // 2. Close any unterminated array
-  const openBrackets = (jsonStr.match(/\[/g) || []).length
-  const closeBrackets = (jsonStr.match(/\]/g) || []).length
-  for (let i = 0; i < openBrackets - closeBrackets; i++) {
-    jsonStr += ']'
-  }
-
-  // 3. Close the object
-  if (!jsonStr.trimEnd().endsWith('}')) {
-    jsonStr += '}'
-  }
-
-  try {
-    return JSON.parse(jsonStr)
-  } catch (e) {
-    console.warn('⚠️ Repair parse failed, extracting fields via regex...')
-  }
-
-  // Last resort: regex extract the key fields we need
-  const categoryMatch = text.match(/"category"\s*:\s*"([^"]+)"/)
-  const confidenceMatch = text.match(/"confidence"\s*:\s*([\d.]+)/)
-  const reasoningMatch = text.match(/"reasoning"\s*:\s*"([^"]*)"?/)
-
-  if (categoryMatch) {
-    return {
-      category: categoryMatch[1],
-      confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) : 0.5,
-      reasoning: reasoningMatch ? reasoningMatch[1] : '',
-      keywords_detected: []
-    }
-  }
-
-  return null
-}
 
 /**
  * Quick detection of Vietnamese slang/profanity (before API call)

@@ -142,33 +142,39 @@ Chỉ trả về JSON, không thêm text khác.`
                 { role: 'user', content: prompt }
             ],
             temperature: 0.7,
-            maxTokens: 2048
+            maxTokens: 2048,
+            format: {
+                type: 'object',
+                properties: {
+                    response: { type: 'string' },
+                    assessment: {
+                        type: 'object',
+                        properties: {
+                            urgencyLevel: { type: 'number' },
+                            suicideRisk: { type: 'string', enum: ['none', 'low', 'medium', 'high'] },
+                            mainIssues: { type: 'array', items: { type: 'string' } },
+                            emotionalState: { type: 'string' },
+                            summary: { type: 'string' }
+                        },
+                        required: ['urgencyLevel', 'suicideRisk', 'mainIssues', 'emotionalState', 'summary']
+                    }
+                },
+                required: ['response', 'assessment']
+            }
         })
 
         console.log('✅ Ollama API response received')
 
-        if (!text) {
-            console.warn('⚠️ Empty response from Ollama API')
-        }
-
-        const jsonMatch = text.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-            const result = JSON.parse(jsonMatch[0])
-            return {
-                response: result.response || 'Cảm ơn bạn đã chia sẻ. Tư vấn viên sẽ sớm liên hệ với bạn.',
-                assessment: {
-                    urgencyLevel: Math.min(3, Math.max(0, parseInt(result.assessment?.urgencyLevel) || 0)),
-                    suicideRisk: result.assessment?.suicideRisk || 'none',
-                    mainIssues: result.assessment?.mainIssues || [],
-                    emotionalState: result.assessment?.emotionalState || '',
-                    summary: result.assessment?.summary || ''
-                }
-            }
-        }
-
+        const result = JSON.parse(text)
         return {
-            response: 'Mình hiểu bạn đang trải qua nhiều điều. Bạn có thể chia sẻ thêm không?',
-            assessment: null
+            response: result.response || 'Cảm ơn bạn đã chia sẻ. Tư vấn viên sẽ sớm liên hệ với bạn.',
+            assessment: {
+                urgencyLevel: Math.min(3, Math.max(0, parseInt(result.assessment?.urgencyLevel) || 0)),
+                suicideRisk: result.assessment?.suicideRisk || 'none',
+                mainIssues: result.assessment?.mainIssues || [],
+                emotionalState: result.assessment?.emotionalState || '',
+                summary: result.assessment?.summary || ''
+            }
         }
     } catch (error) {
         console.error('❌ AI response error:', error)
@@ -232,15 +238,26 @@ Chỉ trả về JSON.`
                 { role: 'user', content: prompt }
             ],
             temperature: 0.3,
-            maxTokens: 1020
+            maxTokens: 1020,
+            format: {
+                type: 'object',
+                properties: {
+                    urgencyLevel: { type: 'number' },
+                    suicideRisk: { type: 'string', enum: ['none', 'low', 'medium', 'high'] },
+                    riskFactors: { type: 'array', items: { type: 'string' } },
+                    protectiveFactors: { type: 'array', items: { type: 'string' } },
+                    mainIssues: { type: 'array', items: { type: 'string' } },
+                    emotionalState: { type: 'string' },
+                    behavioralIndicators: { type: 'array', items: { type: 'string' } },
+                    recommendedApproach: { type: 'string' },
+                    summary: { type: 'string' },
+                    priorityNote: { type: 'string' }
+                },
+                required: ['urgencyLevel', 'suicideRisk', 'mainIssues', 'emotionalState', 'summary']
+            }
         })
 
-        const jsonMatch = text.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-            return JSON.parse(jsonMatch[0])
-        }
-
-        return null
+        return JSON.parse(text)
     } catch (error) {
         console.error('Assessment generation error:', error)
         return null
