@@ -12,14 +12,13 @@
 
 ## 🛠️ Công nghệ sử dụng
 
-| Thành phần | Công nghệ |
+| Thành phần |
 |------------|-----------|
 | **Frontend** | React 18 + Vite |
 | **Backend** | Supabase (PostgreSQL + Real-time + Auth + Storage) |
-| **AI System** | Google Gemini API |
+| **AI System** | Ollama API |
 | **Styling** | Tailwind CSS |
 | **Icons** | Lucide React |
-| **Deployment** | Vercel |
 
 ## 📁 Cấu trúc dự án
 
@@ -66,8 +65,8 @@ src/
 
 ```bash
 # Clone repository
-git clone https://github.com/your-repo/s-net.git
-cd s-net
+git clone https://github.com/Temin2972/CBKC.S-Net.git
+cd CBKC.S-Net
 
 # Cài đặt dependencies
 npm install
@@ -86,12 +85,8 @@ Tạo file `.env` với các biến sau:
 ```env
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_GEMINI_API_KEY=your_gemini_api_key
+...
 ```
-
-## 📖 Triển khai
-
-Bất kỳ ai cũng có thể sử dụng nền tảng này để triển khai 1 trang web riêng của họ. Xem thêm tại [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## 🏗️ Kiến trúc mã nguồn
 
@@ -137,7 +132,3 @@ Tất cả constants được tập trung trong `src/constants/`:
 import { ROUTES, USER_ROLES } from '../constants'
 import { AUTH_MESSAGES, BUTTON_LABELS } from '../constants/messages'
 ```
-
-## 📄 License
-
-MIT License
